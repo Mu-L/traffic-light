@@ -62,7 +62,14 @@ class PlanNotification(
         val speed = data.substringBefore(" ")
         val unit = data.substringAfter(" ")
         val maxString = if (dataPlan.mainDataSize.byteValue!=0L) "/${dataSizeMax.toString(metric = sizeMetric)}" else ""
-        notification = notificationBuilder
+        notification =
+            (
+                if (dataPlan.liveNotification) {
+                    buildForChannel(NOTIFICATION_CHANNEL_ID)
+                } else {
+                    notificationBuilder
+                }
+            )
             .apply {
                 if (!dataPlan.liveNotification) {
                     setSmallIcon(notificationIconHelper.createIcon(speed, unit))
@@ -83,23 +90,25 @@ class PlanNotification(
         notifySafely(notificationId, notification)
     }
 
-    private fun updateBaseNotification() {
-        notificationBuilder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.notification)
-            .setContentTitle(context.getString(R.string.app_name_short))
-            .setOngoing(true)
-            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-            .setRequestPromotedOngoing(dataPlan.liveNotification)
-            .setSilent(true)
-            .setLocalOnly(true)
-            .setOnlyAlertOnce(true)
-            .setContentIntent(
-                PendingIntent.getActivity(
-                    context, 0, Intent(context, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }, PendingIntent.FLAG_IMMUTABLE
-                )
+    private fun buildForChannel(channel: String): NotificationCompat.Builder = NotificationCompat.Builder(context, channel)
+        .setSmallIcon(R.drawable.notification)
+        .setContentTitle(context.getString(R.string.app_name_short))
+        .setOngoing(true)
+        .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+        .setRequestPromotedOngoing(dataPlan.liveNotification)
+        .setSilent(true)
+        .setLocalOnly(true)
+        .setOnlyAlertOnce(true)
+        .setContentIntent(
+            PendingIntent.getActivity(
+                context, 0, Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }, PendingIntent.FLAG_IMMUTABLE
             )
+        )
+
+    private fun updateBaseNotification() {
+        notificationBuilder = buildForChannel(NOTIFICATION_CHANNEL_ID)
 
         notification = notificationBuilder.build()
     }

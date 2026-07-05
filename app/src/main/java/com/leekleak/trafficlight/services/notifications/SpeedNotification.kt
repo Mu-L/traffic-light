@@ -146,8 +146,22 @@ class SpeedNotification(
 
         val speed = data.substringBefore(" ")
         val unit = data.substringAfter(" ")
-        notification = (if (shouldGoSilent()) notificationBuilderSilent else notificationBuilder)
-            .setRequestPromotedOngoing(liveNotification)
+        notification = (
+                if (shouldGoSilent()) {
+                    if (liveNotification) {
+                        buildForChannel(NOTIFICATION_CHANNEL_ID_SILENT)
+                    } else {
+                        notificationBuilderSilent
+                    }
+                } else {
+                    if (liveNotification) {
+                        buildForChannel(NOTIFICATION_CHANNEL_ID)
+                    } else {
+                        notificationBuilder
+                    }
+                }
+            )
+            .setRequestPromotedOngoing(liveNotification && !shouldGoSilent())
             .apply {
                 if (!liveNotification) {
                     setSmallIcon(
@@ -160,15 +174,16 @@ class SpeedNotification(
                                 speed1 = "${speedUp.first} ${speedUp.third.substring(0,1)}",
                                 speed2 = "${speedDown.first} ${speedDown.third.substring(0,1)}"
                             )
-                        })
-                    setWhen(Long.MAX_VALUE) // Keep above other notifications
-                    setShowWhen(false) // Hide timestamp
+                        }
+                    )
                 }
                 else  {
                     setSmallIcon(R.drawable.mobiledata_arrows)
                     setShortCriticalText(data)
                 }
             }
+            .setWhen(Long.MAX_VALUE) // Keep above other notifications
+            .setShowWhen(false) // Hide timestamp
             .setContentTitle(title)
             .setContentText(messageShort)
             .build()
@@ -182,23 +197,23 @@ class SpeedNotification(
         todayUsage = DayUsage(date, mobile, wifi)
     }
 
-    private fun updateBaseNotification() {
-        fun buildForChannel(channel: String): NotificationCompat.Builder = NotificationCompat.Builder(context, channel)
-            .setSmallIcon(R.drawable.notification)
-            .setContentTitle(context.getString(R.string.app_name_short))
-            .setOngoing(true)
-            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-            .setSilent(true)
-            .setLocalOnly(true)
-            .setOnlyAlertOnce(true)
-            .setContentIntent(
-                PendingIntent.getActivity(
-                    context, 0, Intent(context, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }, PendingIntent.FLAG_IMMUTABLE
-                )
+    private fun buildForChannel(channel: String): NotificationCompat.Builder = NotificationCompat.Builder(context, channel)
+        .setSmallIcon(R.drawable.notification)
+        .setContentTitle(context.getString(R.string.app_name_short))
+        .setOngoing(true)
+        .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+        .setSilent(true)
+        .setLocalOnly(true)
+        .setOnlyAlertOnce(true)
+        .setContentIntent(
+            PendingIntent.getActivity(
+                context, 0, Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }, PendingIntent.FLAG_IMMUTABLE
             )
+        )
 
+    private fun updateBaseNotification() {
         notificationBuilder = buildForChannel(NOTIFICATION_CHANNEL_ID)
         notificationBuilderSilent = buildForChannel(NOTIFICATION_CHANNEL_ID_SILENT)
 
