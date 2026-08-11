@@ -724,23 +724,23 @@ fun AppItem(
     val usageQueries by viewModel.queryFlow.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Column(
-            modifier = modifier
-                .clip(MaterialTheme.shapes.small)
-                .background(colorScheme.surface)
-                .clickable {
-                    onClick()
-                    haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                }
+    Column(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.small)
+            .background(colorScheme.surface)
+            .clickable {
+                onClick()
+                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+            }
+    ) {
+        Row(
+            modifier = Modifier.padding(4.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(
-                modifier = Modifier.padding(4.dp),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                icon()
-                Column {
+            icon()
+            Column {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     AnimatedVisibility(
                         visible = selected,
                         enter = expandVertically(spring(0.7f, Spring.StiffnessMedium)),
@@ -759,86 +759,86 @@ fun AppItem(
                             LineGraphHeader()
                         }
                     }
-                    val graphUsage1 = if (usageQueries.first.dataType != DataType.None) usage1 else null
-                    val graphUsage2 = if (usageQueries.second.dataType != DataType.None) usage2 else null
-                    LineGraph(
-                        maximum = maximum,
-                        data = Pair(graphUsage1, graphUsage2)
-                    )
-                    AnimatedVisibility(
-                        visible = selected && app != null && app != allApp,
-                        enter = expandVertically(spring(0.7f, Spring.StiffnessMedium)),
-                        exit = shrinkVertically(spring(0.7f, Spring.StiffnessMedium))
-                    ) {
-                        Column(modifier.padding(top = 6.dp)) {
-                            Row (
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                Button(
-                                    modifier = Modifier.padding(end = 4.dp),
-                                    shape = MaterialTheme.shapes.large,
-                                    onClick = {
-                                        scope.launch {
-                                            app?.uid?.let {
-                                                viewModel.updateQuery(1, usageQueries.first.copy(dataUID = appManager.getAppForUID(it)))
-                                                viewModel.updateQuery(2, usageQueries.second.copy(dataUID = appManager.getAppForUID(it)))
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            }
+                }
+                val graphUsage1 = if (usageQueries.first.dataType != DataType.None) usage1 else null
+                val graphUsage2 = if (usageQueries.second.dataType != DataType.None) usage2 else null
+                LineGraph(
+                    maximum = maximum,
+                    data = Pair(graphUsage1, graphUsage2)
+                )
+                AnimatedVisibility(
+                    visible = selected && app != null && app != allApp,
+                    enter = expandVertically(spring(0.7f, Spring.StiffnessMedium)),
+                    exit = shrinkVertically(spring(0.7f, Spring.StiffnessMedium))
+                ) {
+                    Column(modifier.padding(top = 6.dp)) {
+                        Row (
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Button(
+                                modifier = Modifier.padding(end = 4.dp),
+                                shape = MaterialTheme.shapes.large,
+                                onClick = {
+                                    scope.launch {
+                                        app?.uid?.let {
+                                            viewModel.updateQuery(1, usageQueries.first.copy(dataUID = appManager.getAppForUID(it)))
+                                            viewModel.updateQuery(2, usageQueries.second.copy(dataUID = appManager.getAppForUID(it)))
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         }
                                     }
+                                }
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(painterResource(R.drawable.custom), null)
+                                    Text(stringResource(R.string.quick_filter))
+                                }
+                            }
+                            if (app is DataUIDApp) {
+                                val app by produceState<DataUID>(allApp) { value = appManager.getAppForUID(app.uid) }
+                                val launchIntent by remember { derivedStateOf {
+                                    activity?.packageManager?.getLaunchIntentForPackage(app.packageName)
+                                } }
+                                FilledIconButton(
+                                    enabled = launchIntent != null,
+                                    onClick = {
+                                        viewModel.openApp(activity, launchIntent)
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.open_in_new),
+                                        stringResource(R.string.open_app)
+                                    )
+                                }
+                                FilledIconButton(
+                                    onClick = {
+                                        scope.launch {
+                                            viewModel.openPackageSettings(activity, app.uid)
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.settings),
+                                        stringResource(R.string.settings)
+                                    )
+                                }
+                            } else if (app == otherUsersApp) {
+                                Button(
+                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                    shape = MaterialTheme.shapes.large,
+                                    onClick = { openLink(activity, "https://github.com/leekleak/traffic-light/wiki/Troubleshooting#network-usage") },
                                 ) {
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(painterResource(R.drawable.custom), null)
-                                        Text(stringResource(R.string.quick_filter))
-                                    }
-                                }
-                                if (app is DataUIDApp) {
-                                    val app by produceState<DataUID>(allApp) { value = appManager.getAppForUID(app.uid) }
-                                    val launchIntent by remember { derivedStateOf {
-                                        activity?.packageManager?.getLaunchIntentForPackage(app.packageName)
-                                    } }
-                                    FilledIconButton(
-                                        enabled = launchIntent != null,
-                                        onClick = {
-                                            viewModel.openApp(activity, launchIntent)
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        }
-                                    ) {
-                                        Icon(
-                                            painterResource(R.drawable.open_in_new),
-                                            stringResource(R.string.open_app)
-                                        )
-                                    }
-                                    FilledIconButton(
-                                        onClick = {
-                                            scope.launch {
-                                                viewModel.openPackageSettings(activity, app.uid)
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            painterResource(R.drawable.settings),
-                                            stringResource(R.string.settings)
-                                        )
-                                    }
-                                } else if (app == otherUsersApp) {
-                                    Button(
-                                        modifier = Modifier.padding(start = 4.dp),
-                                        shape = MaterialTheme.shapes.large,
-                                        onClick = { openLink(activity, "https://github.com/leekleak/traffic-light/wiki/Troubleshooting#network-usage") },
-                                    ) {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(painterResource(R.drawable.help), null)
-                                            Text(stringResource(R.string.help))
-                                        }
+                                        Icon(painterResource(R.drawable.help), null)
+                                        Text(stringResource(R.string.help))
                                     }
                                 }
                             }
