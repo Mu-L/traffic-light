@@ -98,7 +98,6 @@ import com.leekleak.trafficlight.model.AppManager.Companion.allApp
 import com.leekleak.trafficlight.model.AppManager.Companion.otherUsersApp
 import com.leekleak.trafficlight.model.AppManager.Companion.removedApp
 import com.leekleak.trafficlight.model.AppManager.Companion.tetheringApp
-import com.leekleak.trafficlight.model.AppManager.Companion.unknownApp
 import com.leekleak.trafficlight.model.DataUID
 import com.leekleak.trafficlight.model.DataUIDApp
 import com.leekleak.trafficlight.model.search
@@ -109,6 +108,7 @@ import com.leekleak.trafficlight.util.PageTitle
 import com.leekleak.trafficlight.util.SearchField
 import com.leekleak.trafficlight.util.getName
 import com.leekleak.trafficlight.util.iconToggleButton
+import com.leekleak.trafficlight.util.openLink
 import com.leekleak.trafficlight.util.shelfShape
 import com.leekleak.trafficlight.util.toDp
 import com.leekleak.trafficlight.util.toLocaleHourString
@@ -765,9 +765,8 @@ fun AppItem(
                         maximum = maximum,
                         data = Pair(graphUsage1, graphUsage2)
                     )
-                    val noOptionApps = listOf(allApp, unknownApp, otherUsersApp)
                     AnimatedVisibility(
-                        visible = selected && app != null && !noOptionApps.contains(app),
+                        visible = selected && app != null && app != allApp,
                         enter = expandVertically(spring(0.7f, Spring.StiffnessMedium)),
                         exit = shrinkVertically(spring(0.7f, Spring.StiffnessMedium))
                     ) {
@@ -826,6 +825,20 @@ fun AppItem(
                                             painterResource(R.drawable.settings),
                                             stringResource(R.string.settings)
                                         )
+                                    }
+                                } else if (app == otherUsersApp) {
+                                    Button(
+                                        modifier = Modifier.padding(start = 4.dp),
+                                        shape = MaterialTheme.shapes.large,
+                                        onClick = { openLink(activity, "https://github.com/leekleak/traffic-light/wiki/Troubleshooting#network-usage") },
+                                    ) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(painterResource(R.drawable.help), null)
+                                            Text(stringResource(R.string.help))
+                                        }
                                     }
                                 }
                             }
