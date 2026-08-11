@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.DeadSystemException
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import kotlinx.coroutines.CoroutineScope
@@ -54,6 +55,9 @@ abstract class PersistentNotification(
             notificationManager.notify(id, notification)
         } catch (e: SecurityException) {
             Timber.e(e, "SecurityException while notifying $id")
+        } catch (e: DeadSystemException) {
+            Timber.e(e, "System just died lol. Good luck.")
+            cancel()
         }
     }
     abstract fun screenStateChange(on: Boolean)

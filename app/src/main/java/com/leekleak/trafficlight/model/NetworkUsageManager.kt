@@ -29,6 +29,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.TextStyle
@@ -98,11 +99,16 @@ class NetworkUsageManager(
         }
 
         val deviceTotalDeferred = async {
-            networkStatsManager.querySummaryForDevice(queryIndex, subscriberId, startStamp, endStamp)
+            try {
+                networkStatsManager.querySummaryForDevice(queryIndex, subscriberId, startStamp, endStamp)
+            } catch (e: SecurityException) {
+                Timber.e(e)
+                null
+            }
         }
 
         val buckets = bucketsDeferred.await().toMutableList()
-        val deviceTotal = deviceTotalDeferred.await()
+        val deviceTotal = deviceTotalDeferred.await() ?: return@withContext emptyList()
 
         // Reconcile with device total to include other users/Secure Folder
         val diffUpload = maxOf(0L, deviceTotal.txBytes - buckets.sumOf { it.upload })
