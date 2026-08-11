@@ -130,6 +130,7 @@ private fun InterfaceSettings() {
 
     CategoryTitleSmallText(stringResource(R.string.ui))
     val theme by appPreferenceRepo.theme.collectAsState(Theme.AutoMaterial)
+    val blur by appPreferenceRepo.blur.collectAsState(true)
     val scroll = rememberScrollState(0)
 
     val panelWidth =
@@ -149,6 +150,12 @@ private fun InterfaceSettings() {
         ThemePreferenceContainer(theme, true) { scope.launch { appPreferenceRepo.setTheme(it) } }
         ThemePreferenceContainer(theme, false) { scope.launch { appPreferenceRepo.setTheme(it) } }
     }
+    SwitchPreference(
+        title = stringResource(R.string.blur_effects),
+        icon = painterResource(R.drawable.blur_on),
+        value = blur,
+        onValueChanged = { scope.launch { appPreferenceRepo.setBlur(it) } },
+    )
 }
 
 @Composable

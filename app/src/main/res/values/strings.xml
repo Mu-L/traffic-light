@@ -162,6 +162,7 @@
     <string name="system_service">System service %1$d</string>
     <string name="up_down" translatable="false">"↑: %1$s   ↓: %2$s"</string>
     <string name="selected">Selected</string>
+    <string name="blur_effects">Blur effects</string>
     <plurals name="resets_in_days">
         <item quantity="one">Resets tomorrow</item>
         <item quantity="other">Resets in %d days</item>

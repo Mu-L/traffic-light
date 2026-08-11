@@ -92,7 +92,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
+import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.theme.card
 import com.leekleak.trafficlight.ui.theme.googleSans
@@ -525,15 +527,18 @@ fun HazeScaffold(
     paddingValues: PaddingValues?,
     modifier: Modifier = Modifier,
     scrollState: ScrollState? = rememberScrollState(),
-    hazeState: HazeState = rememberHazeState(),
     backButton: Boolean = false,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     actions: @Composable BoxScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+    val blurEnabled by appPreferenceRepo.blur.collectAsStateWithLifecycle(true)
+
     val paddingSide = paddingValues?.calculateLeftPadding(LayoutDirection.Ltr)
     val paddingTop = paddingValues?.calculateTopPadding()
     val paddingBottom = paddingValues?.calculateBottomPadding()
+    val hazeState: HazeState = rememberHazeState(blurEnabled)
 
     Box(modifier.fillMaxSize()) {
         Column(

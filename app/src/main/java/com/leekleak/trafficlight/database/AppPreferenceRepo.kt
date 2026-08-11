@@ -59,6 +59,9 @@ class AppPreferenceRepo (
     val theme: Flow<Theme> = data.map { prefs -> prefs[THEME]?.let { valueOfOrNull<Theme>(it) } ?: Theme.AutoMaterial }.distinctUntilChanged()
     suspend fun setTheme(value: Theme) = dataStore.edit { it[THEME] = value.name }
 
+    val blur: Flow<Boolean> = data.map { prefs -> prefs[BLUR] ?: true }.distinctUntilChanged()
+    suspend fun setBlur(value: Boolean) = dataStore.edit { it[BLUR] = value }
+
     val shizukuTracking: Flow<Boolean> = data.map { it[SHIZUKU_TRACKING] ?: false }.distinctUntilChanged()
     suspend fun setShizukuTracking(value: Boolean) = dataStore.edit { it[SHIZUKU_TRACKING] = value }
 
@@ -84,6 +87,7 @@ class AppPreferenceRepo (
         private val SPEED_METRIC = booleanPreferencesKey("speed_metric")
         private val SIZE_METRIC = booleanPreferencesKey("size_metric")
         private val THEME = stringPreferencesKey("theme")
+        private val BLUR = booleanPreferencesKey("blur")
         private val SHIZUKU_TRACKING = booleanPreferencesKey("shizuku_tracking")
         private val SHIZUKU_HINT = booleanPreferencesKey("shizuku_hint")
         private val ADS = booleanPreferencesKey("supporter_ads")
