@@ -9,6 +9,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -80,7 +83,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
@@ -101,7 +103,6 @@ import com.leekleak.trafficlight.model.DataUID
 import com.leekleak.trafficlight.model.DataUIDApp
 import com.leekleak.trafficlight.model.search
 import com.leekleak.trafficlight.ui.plans.AppSelector
-import com.leekleak.trafficlight.ui.theme.card
 import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.ui.theme.historyItemFont
 import com.leekleak.trafficlight.util.PageTitle
@@ -376,99 +377,134 @@ fun HistoryFilter(onDismiss: () -> Unit) {
     val filtersChanged by viewModel.filtersChanged.collectAsStateWithLifecycle()
     val font = remember { googleSans(weight = 600f) }
 
-    Dialog(
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
+    ModalBottomSheet (
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
     ) {
-        Column(modifier = Modifier.card().background(colorScheme.surface).padding(16.dp)) {
-            Text(
-                text = stringResource(R.string.filter),
-                style = MaterialTheme.typography.headlineSmallEmphasized,
-                fontFamily = font
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                HistoryItemSettings(
-                    stringResource(R.string.primary),
-                    1,
-                    usageQueries.first
+        Column(modifier = Modifier.systemBarsPadding()) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Text(
+                    text = stringResource(R.string.filter),
+                    style = MaterialTheme.typography.headlineSmallEmphasized,
+                    fontFamily = font
                 )
-                HistoryItemSettings(
-                    stringResource(R.string.secondary),
-                    2,
-                    usageQueries.second
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    HistoryItemSettings(
+                        stringResource(R.string.primary),
+                        1,
+                        usageQueries.first
+                    )
+                    HistoryItemSettings(
+                        stringResource(R.string.secondary),
+                        2,
+                        usageQueries.second
+                    )
+                }
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                Text(
+                    text = stringResource(R.string.list),
+                    style = MaterialTheme.typography.headlineSmallEmphasized,
+                    fontFamily = font
                 )
+                val forceHourList by viewModel.forceHourList.collectAsStateWithLifecycle()
+                ButtonGroup(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        4.dp,
+                        Alignment.CenterHorizontally
+                    ),
+                    expandedRatio = 0.05f,
+                    overflowIndicator = {}
+                ) {
+                    toggleableItem(
+                        onCheckedChange = {
+                            viewModel.updateListQuery(ListParam.AppList)
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        },
+                        label = ListParam.AppList.getString(context),
+                        icon = { Icon(painterResource(R.drawable.apps), null) },
+                        enabled = !forceHourList,
+                        checked = listParam == ListParam.AppList,
+                        weight = 1f
+                    )
+                    toggleableItem(
+                        onCheckedChange = {
+                            viewModel.updateListQuery(ListParam.HourList)
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        },
+                        label = ListParam.HourList.getString(context),
+                        icon = { Icon(painterResource(R.drawable.clock_analog), null) },
+                        checked = listParam == ListParam.HourList,
+                        weight = 1f
+                    )
+                }
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
             }
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            Text(
-                text = stringResource(R.string.list),
-                style = MaterialTheme.typography.headlineSmallEmphasized,
-                fontFamily = font
-            )
-            val forceHourList by viewModel.forceHourList.collectAsStateWithLifecycle()
-            ButtonGroup(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(
-                    4.dp,
-                    Alignment.CenterHorizontally
-                ),
-                expandedRatio = 0.05f,
-                overflowIndicator = {}
-            ) {
-                toggleableItem(
-                    onCheckedChange = {
-                        viewModel.updateListQuery(ListParam.AppList)
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    },
-                    label = ListParam.AppList.getString(context),
-                    icon = { Icon(painterResource(R.drawable.apps), null) },
-                    enabled = !forceHourList,
-                    checked = listParam == ListParam.AppList,
-                    weight = 1f
-                )
-                toggleableItem(
-                    onCheckedChange = {
-                        viewModel.updateListQuery(ListParam.HourList)
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    },
-                    label = ListParam.HourList.getString(context),
-                    icon = { Icon(painterResource(R.drawable.clock_analog), null) },
-                    checked = listParam == ListParam.HourList,
-                    weight = 1f
-                )
-            }
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState(Int.MAX_VALUE))
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
             ) {
-                FilledIconButton (
+                val contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+                Spacer(Modifier.width(8.dp))
+                Button (
                     onClick = {
                         viewModel.resetFilters()
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     },
-                    enabled = filtersChanged
+                    enabled = filtersChanged,
+                    contentPadding = contentPadding,
+                    colors = ButtonDefaults.filledTonalButtonColors()
                 ) {
-                    Icon(painterResource(R.drawable.reset_wrench), stringResource(R.string.reset))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(painterResource(R.drawable.reset_wrench), null)
+                        Text(stringResource(R.string.reset))
+                    }
                 }
-                FilledIconButton (
+                Button (
                     onClick = {
                         viewModel.persistFilters()
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     },
-                    enabled = filtersChanged
+                    enabled = filtersChanged,
+                    contentPadding = contentPadding,
+                    colors = ButtonDefaults.filledTonalButtonColors()
                 ) {
-                    Icon(painterResource(R.drawable.archive), stringResource(R.string.persist))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(painterResource(R.drawable.archive), null)
+                        Text(stringResource(R.string.set_as_default))
+                    }
                 }
                 Button(
-                    modifier = Modifier.padding(start = 4.dp),
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onDismiss()
-                    }
+                    },
+                    contentPadding = contentPadding
                 ) {
-                    Text(stringResource(R.string.close))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(painterResource(R.drawable.close), null)
+                        Text(stringResource(R.string.close))
+                    }
                 }
+                Spacer(Modifier.width(8.dp))
             }
         }
     }
@@ -646,7 +682,9 @@ private fun <T : DropdownItem> FilterDropdownButton(
 ) {
     val scrollState = rememberScrollState()
     var expanded by remember { mutableStateOf(false)}
-    Box(modifier = Modifier.fillMaxWidth().wrapContentSize(Alignment.TopStart)) {
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .wrapContentSize(Alignment.TopStart)) {
         FilterButton(
             n = n,
             enabled = enabled,
