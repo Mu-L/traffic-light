@@ -207,6 +207,7 @@ class SpeedNotification(
             setSilent(true)
             setLocalOnly(true)
             setOnlyAlertOnce(true)
+            setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             try {
                 setContentIntent(
                     PendingIntent.getActivity(
@@ -216,7 +217,7 @@ class SpeedNotification(
                         }, PendingIntent.FLAG_IMMUTABLE
                     )
                 )
-            } catch (e: DeadSystemException) {
+            } catch (_: DeadSystemException) {
                 Timber.e("System died lol. Good luck!")
                 cancel()
             }
