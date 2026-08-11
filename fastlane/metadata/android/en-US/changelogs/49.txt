@@ -1,0 +1,8 @@
+Enhancements:
+- Add option to disable blur effects
+- Speed notification should no longer be hidden from the lock screen
+- A couple UI clarity tweaks
+- Improved performance
+
+Bug Fixes:
+- Fixed quite a few crashes
