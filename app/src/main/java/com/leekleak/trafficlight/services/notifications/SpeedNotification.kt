@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import android.os.DeadSystemException
 import androidx.core.app.NotificationCompat
 import com.leekleak.trafficlight.MainActivity
 import com.leekleak.trafficlight.R
@@ -197,21 +198,30 @@ class SpeedNotification(
         todayUsage = DayUsage(date, mobile, wifi)
     }
 
-    private fun buildForChannel(channel: String): NotificationCompat.Builder = NotificationCompat.Builder(context, channel)
-        .setSmallIcon(R.drawable.notification)
-        .setContentTitle(context.getString(R.string.app_name_short))
-        .setOngoing(true)
-        .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-        .setSilent(true)
-        .setLocalOnly(true)
-        .setOnlyAlertOnce(true)
-        .setContentIntent(
-            PendingIntent.getActivity(
-                context, 0, Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                }, PendingIntent.FLAG_IMMUTABLE
-            )
-        )
+    private fun buildForChannel(channel: String): NotificationCompat.Builder {
+        return NotificationCompat.Builder(context, channel).apply {
+            setSmallIcon(R.drawable.notification)
+            setContentTitle(context.getString(R.string.app_name_short))
+            setOngoing(true)
+            setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            setSilent(true)
+            setLocalOnly(true)
+            setOnlyAlertOnce(true)
+            try {
+                setContentIntent(
+                    PendingIntent.getActivity(
+                        context, 0, Intent(context, MainActivity::class.java).apply {
+                            flags =
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        }, PendingIntent.FLAG_IMMUTABLE
+                    )
+                )
+            } catch (e: DeadSystemException) {
+                Timber.e("System died lol. Good luck!")
+                cancel()
+            }
+        }
+    }
 
     private fun updateBaseNotification() {
         notificationBuilder = buildForChannel(NOTIFICATION_CHANNEL_ID)

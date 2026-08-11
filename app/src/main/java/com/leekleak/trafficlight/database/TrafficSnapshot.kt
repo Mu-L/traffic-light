@@ -8,9 +8,11 @@ import android.os.Build
 import com.leekleak.trafficlight.model.DataUID
 import com.leekleak.trafficlight.util.toLocaleHourString
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 import java.time.LocalDate
@@ -72,7 +74,7 @@ class TrafficSnapshot (
         lastUp = currentUp
     }
 
-    fun updateSnapshot() {
+    suspend fun updateSnapshot() {
         if (useFallback) {
             try {
                 fallbackUpdateSnapshot()
@@ -90,7 +92,7 @@ class TrafficSnapshot (
         }
     }
 
-    private fun regularUpdateSnapshot() {
+    private suspend fun regularUpdateSnapshot() = withContext(Dispatchers.IO) {
         val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
         val runVpnWorkaround = (capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) ?: false)
                 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
