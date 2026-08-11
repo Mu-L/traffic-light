@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.TrafficSnapshot
@@ -157,7 +158,7 @@ private fun NotificationAppearanceSettings() {
     val scope = rememberCoroutineScope()
 
     val separateUpDown by appPreferenceRepo.separateUpDown.collectAsState(false)
-    val liveNotification by viewModel.liveNotification.collectAsState()
+    val liveNotification by viewModel.liveNotification.collectAsStateWithLifecycle()
     CategoryTitleSmallText(stringResource(R.string.appearance))
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
         LiveNotificationSettings()
@@ -190,7 +191,7 @@ private fun LiveNotificationSettings() {
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
 
-    val liveNotification by viewModel.liveNotification.collectAsState()
+    val liveNotification by viewModel.liveNotification.collectAsStateWithLifecycle()
     val separateUpDown by appPreferenceRepo.separateUpDown.collectAsState(false)
     Row(
         modifier = Modifier.height(IntrinsicSize.Min),

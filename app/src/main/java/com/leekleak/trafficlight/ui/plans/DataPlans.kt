@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.AppGraph
 import com.leekleak.trafficlight.charts.BarGraph
@@ -212,7 +213,7 @@ private fun DataPlanInsights(contentPadding: PaddingValues) {
     val viewModel: DataPlansVM = koinViewModel()
     val appPreferenceRepo: AppPreferenceRepo = koinInject()
     val planPair by viewModel.planFlow.collectAsState(null)
-    val topAppsList by viewModel.topApps.collectAsState()
+    val topAppsList by viewModel.topApps.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val adsEnabled by appPreferenceRepo.ads.collectAsState(false)
 
@@ -306,7 +307,7 @@ private fun LazyListScope.usageInsights() {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val viewModel: DataPlansVM = koinViewModel()
-                val dataSafety by viewModel.dataSafety.collectAsState()
+                val dataSafety by viewModel.dataSafety.collectAsStateWithLifecycle()
                 MiniCard(
                     state = dataSafety,
                     baseColor = colorScheme.surface,
@@ -322,7 +323,7 @@ private fun LazyListScope.usageInsights() {
                     )
                 )
 
-                val trend by viewModel.trend.collectAsState()
+                val trend by viewModel.trend.collectAsStateWithLifecycle()
                 TrendCard(
                     trend = trend,
                     baseColor = colorScheme.surface
@@ -339,7 +340,7 @@ private fun LazyListScope.budgetInsights() {
             val metric = LocalSizeMetric.current
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val viewModel: DataPlansVM = koinViewModel()
-                val todayBudget by viewModel.todayBudget.collectAsState()
+                val todayBudget by viewModel.todayBudget.collectAsStateWithLifecycle()
                 val todayString by remember(todayBudget, metric) { derivedStateOf { DataSize(todayBudget).toStringParts(metric = metric) } }
                 MiniCard(
                     state = MiniCardState.NEUTRAL,
@@ -356,7 +357,7 @@ private fun LazyListScope.budgetInsights() {
                     }
                 )
 
-                val remainingDailyBudget by viewModel.remainingDailyBudget.collectAsState()
+                val remainingDailyBudget by viewModel.remainingDailyBudget.collectAsStateWithLifecycle()
                 val remainingString by remember(remainingDailyBudget, metric) { derivedStateOf { DataSize(remainingDailyBudget).toStringParts(metric = metric) } }
                 MiniCard(
                     state = MiniCardState.NEUTRAL,
@@ -381,7 +382,7 @@ private fun LazyListScope.thisWeek() {
     item(key = "this_week") {
         Column(Modifier.animateItem()) {
             val viewModel: DataPlansVM = koinViewModel()
-            val weekUsage by viewModel.weekUsage.collectAsState()
+            val weekUsage by viewModel.weekUsage.collectAsStateWithLifecycle()
             CategoryTitleText(stringResource(R.string.this_week))
             Box(
                 modifier = Modifier

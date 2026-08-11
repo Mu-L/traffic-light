@@ -41,7 +41,6 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.toPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -64,6 +63,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.AppGraph
 import com.leekleak.trafficlight.charts.BarGraph
@@ -148,7 +148,7 @@ private fun HeroItems(scrollState: ScrollState) {
     ) {
         PredictionCard()
         val viewModel: OverviewVM = koinViewModel()
-        val trend by viewModel.trend.collectAsState()
+        val trend by viewModel.trend.collectAsStateWithLifecycle()
         TrendCard(trend)
     }
 }
@@ -161,7 +161,7 @@ private fun OverviewHero(scrollState: ScrollState) {
 
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val query by viewModel.query.collectAsState()
+    val query by viewModel.query.collectAsStateWithLifecycle()
 
     val offset by animateFloatAsState(if (pressed) 132.dp.px else 116.dp.px)
 
@@ -245,7 +245,7 @@ private fun OverviewHero(scrollState: ScrollState) {
                 }
         )
         Column(modifier = Modifier.align(Alignment.Center)) {
-            val todayUsage by viewModel.todayUsage.collectAsState()
+            val todayUsage by viewModel.todayUsage.collectAsStateWithLifecycle()
             val string = DataSize(todayUsage).formattedParts(extraPrecision = true)
 
             val width by animateFloatAsState(
@@ -318,7 +318,7 @@ private fun OverviewHero(scrollState: ScrollState) {
 @Composable
 private fun RowScope.PredictionCard() {
     val viewModel: OverviewVM = koinViewModel()
-    val prediction by viewModel.prediction.collectAsState()
+    val prediction by viewModel.prediction.collectAsStateWithLifecycle()
     val string = DataSize(prediction).formattedParts(extraPrecision = true)
 
     MiniCard(
@@ -340,9 +340,9 @@ private fun RowScope.PredictionCard() {
 @Composable
 fun OverviewItems() {
     val viewModel: OverviewVM = koinViewModel()
-    val data by viewModel.weekUsage.collectAsState()
-    val topAppsList by viewModel.topApps.collectAsState()
-    val query by viewModel.query.collectAsState()
+    val data by viewModel.weekUsage.collectAsStateWithLifecycle()
+    val topAppsList by viewModel.topApps.collectAsStateWithLifecycle()
+    val query by viewModel.query.collectAsStateWithLifecycle()
     CategoryTitleText(stringResource(R.string.top_apps))
     Box(
         modifier = Modifier

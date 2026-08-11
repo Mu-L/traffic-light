@@ -54,7 +54,6 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -83,6 +82,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.LineGraph
 import com.leekleak.trafficlight.charts.ScrollableBarGraph
@@ -125,13 +125,13 @@ fun History(paddingValues: PaddingValues) {
     val viewModel: HistoryVM = koinViewModel()
     val haptic = LocalHapticFeedback.current
 
-    val usage: List<ScrollableBarData> by viewModel.usageFlow.collectAsState()
+    val usage: List<ScrollableBarData> by viewModel.usageFlow.collectAsStateWithLifecycle()
     val sidePadding = remember(paddingValues) { paddingValues.calculateLeftPadding(LayoutDirection.Ltr) }
     val listContentPadding = PaddingValues(sidePadding, sidePadding, sidePadding, paddingValues.calculateBottomPadding())
 
-    val usageQueries by viewModel.queryFlow.collectAsState()
-    val listParam by viewModel.listParamFlow.collectAsState()
-    val dateParams by viewModel.dateParamsFlow.collectAsState()
+    val usageQueries by viewModel.queryFlow.collectAsStateWithLifecycle()
+    val listParam by viewModel.listParamFlow.collectAsStateWithLifecycle()
+    val dateParams by viewModel.dateParamsFlow.collectAsStateWithLifecycle()
 
     LifecycleResumeEffect(Unit) {
         viewModel.refresh()
@@ -170,7 +170,7 @@ fun History(paddingValues: PaddingValues) {
             ) {
                 var showFilter by remember { mutableStateOf(false) }
                 if (showFilter) HistoryFilter { showFilter = false }
-                val filtersChanged by viewModel.filtersChanged.collectAsState()
+                val filtersChanged by viewModel.filtersChanged.collectAsStateWithLifecycle()
                 ButtonGroup(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(
@@ -224,7 +224,7 @@ private fun AppList(paddingValues: PaddingValues) {
     val viewModel: HistoryVM = koinViewModel()
     val context = LocalContext.current
 
-    val appList by remember { viewModel.appList }.collectAsState()
+    val appList by remember { viewModel.appList }.collectAsStateWithLifecycle()
     var appSelected by remember { mutableIntStateOf(-1) }
     val totalMaximum = remember(appList) { appList.find { it.app.uidQuery == null }?.usage?.totalUsage ?: 0 }
 
@@ -262,7 +262,7 @@ private fun HourList(paddingValues: PaddingValues) {
     val viewModel: HistoryVM = koinViewModel()
     val context = LocalContext.current
 
-    val hourList by remember { viewModel.hourList }.collectAsState()
+    val hourList by remember { viewModel.hourList }.collectAsStateWithLifecycle()
     var hourSelected by remember { mutableIntStateOf(-1) }
     val maximum by remember { derivedStateOf { hourList.sumOf { it.usage.totalUsage } } }
     val textMeasurer = rememberTextMeasurer()
@@ -371,9 +371,9 @@ fun HistoryFilter(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val viewModel: HistoryVM = koinViewModel()
 
-    val usageQueries by viewModel.queryFlow.collectAsState()
-    val listParam by viewModel.listParamFlow.collectAsState()
-    val filtersChanged by viewModel.filtersChanged.collectAsState()
+    val usageQueries by viewModel.queryFlow.collectAsStateWithLifecycle()
+    val listParam by viewModel.listParamFlow.collectAsStateWithLifecycle()
+    val filtersChanged by viewModel.filtersChanged.collectAsStateWithLifecycle()
     val font = remember { googleSans(weight = 600f) }
 
     Dialog(
@@ -405,7 +405,7 @@ fun HistoryFilter(onDismiss: () -> Unit) {
                 style = MaterialTheme.typography.headlineSmallEmphasized,
                 fontFamily = font
             )
-            val forceHourList by viewModel.forceHourList.collectAsState()
+            val forceHourList by viewModel.forceHourList.collectAsStateWithLifecycle()
             ButtonGroup(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(
@@ -594,6 +594,7 @@ private fun AppSearchDialog(onSelect: (uid: Int) -> Unit, onDismiss: () -> Unit)
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterButton(
     n: Int,
@@ -682,7 +683,7 @@ fun AppItem(
     val activity = LocalActivity.current
     val viewModel: HistoryVM = koinViewModel()
     val appManager: AppManager = koinInject()
-    val usageQueries by viewModel.queryFlow.collectAsState()
+    val usageQueries by viewModel.queryFlow.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -802,7 +803,7 @@ fun AppItem(
 fun LineGraphHeader() {
     val context = LocalContext.current
     val viewModel: HistoryVM = koinViewModel()
-    val usageQueries by viewModel.queryFlow.collectAsState()
+    val usageQueries by viewModel.queryFlow.collectAsStateWithLifecycle()
 
     Column (Modifier.fillMaxWidth()) {
         Row {

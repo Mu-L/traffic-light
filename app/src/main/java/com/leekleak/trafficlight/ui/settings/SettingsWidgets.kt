@@ -1,9 +1,13 @@
 package com.leekleak.trafficlight.ui.settings
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -13,6 +17,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -38,11 +43,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.toPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -268,7 +272,8 @@ fun SliderPreference(
     onValueChanged: (Long) -> Unit
 ) {
    SliderComponent(
-       modifier = modifier.fillMaxWidth()
+       modifier = modifier
+           .fillMaxWidth()
            .padding(vertical = 4.dp)
            .card()
            .padding(start = 8.dp, end = 16.dp, bottom = 4.dp)
@@ -284,7 +289,43 @@ fun SliderPreference(
 }
 
 @Composable
-fun <T> DialogPreference(
+fun DialogPreference(
+    modifier: Modifier = Modifier,
+    title: String,
+    summary: String? = null,
+    icon: Painter? = null,
+    enabled: Boolean = true,
+    content: @Composable (ColumnScope.(MutableState<Boolean>) -> Unit) = {}
+) {
+    val expanded = remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+
+    Preference(
+        modifier = modifier,
+        title = title,
+        summary = summary,
+        icon = icon,
+        enabled = enabled,
+        onClick = {
+            expanded.value = true
+            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+        },
+    )
+    if (expanded.value) {
+        Dialog(onDismissRequest = { expanded.value = false }) {
+            Column(modifier = Modifier
+                .card()
+                .background(colorScheme.surface)
+                .padding(16.dp)
+            ) {
+                content(expanded)
+            }
+        }
+    }
+}
+
+@Composable
+fun <T> DialogItemSelectPreference(
     modifier: Modifier = Modifier,
     title: String,
     summary: String? = null,
@@ -294,72 +335,71 @@ fun <T> DialogPreference(
     enabled: Boolean = true,
     onValueChanged: (T) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val haptic = LocalHapticFeedback.current
     val font = remember { googleSans(weight = 600f) }
-
     val currentValueLabel = values.find { it.first == value }?.second ?: value.toString()
-
-    Preference(
+    val haptic = LocalHapticFeedback.current
+    DialogPreference(
         modifier = modifier,
         title = title,
         summary = summary ?: currentValueLabel,
         icon = icon,
-        enabled = enabled,
-        onClick = {
-            expanded = true
-            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-        },
-    )
-    if (expanded) {
-        Dialog(onDismissRequest = { expanded = false }) {
-            Column(modifier = Modifier.card().background(colorScheme.surface).padding(16.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmallEmphasized,
-                    fontFamily = font
-                )
-                Column(
-                    modifier = Modifier
-                        .padding(vertical = 12.dp)
-                        .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    values.forEach { (itemValue, label) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.medium)
-                                .clickable {
-                                    onValueChanged(itemValue)
-                                    expanded = false
-                                    haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                                }
-                                .background(if (itemValue == value) colorScheme.primary else colorScheme.surfaceContainer)
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodyLargeEmphasized,
-                                color = if (itemValue == value) colorScheme.onPrimary else colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
+        enabled = enabled
+    ) { expanded ->
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmallEmphasized,
+            fontFamily = font
+        )
+        Column(
+            modifier = Modifier
+                .padding(vertical = 12.dp)
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            values.forEach { (itemValue, label) ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.End
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable {
+                            onValueChanged(itemValue)
+                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        }
+                        .background(if (itemValue == value) colorScheme.primary else colorScheme.surfaceContainer)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = { expanded = false }) {
-                        Text(stringResource(R.string.cancel))
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = label,
+                        style = MaterialTheme.typography.bodyLargeEmphasized,
+                        color = if (itemValue == value) colorScheme.onPrimary else colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold
+                    )
+                    AnimatedVisibility(
+                        visible = itemValue == value,
+                        enter = fadeIn(tween()) + scaleIn(),
+                        exit = fadeOut(tween()) + scaleOut()
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.check_circle),
+                            contentDescription = stringResource(R.string.selected),
+                            tint = colorScheme.onPrimary
+                        )
                     }
                 }
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = { expanded.value = false }) {
+                Text(stringResource(R.string.close))
             }
         }
     }
@@ -461,7 +501,7 @@ fun IconPreference(
             .fillMaxHeight()
             .padding(vertical = 4.dp)
             .card()
-            .clickable(enabled = enabled) {onClick.invoke()}
+            .clickable(enabled = enabled) { onClick.invoke() }
             .alpha(if (enabled) 1f else 0.38f),
     ) {
         Icon(
@@ -714,12 +754,15 @@ fun InfoCard(
     onClick: (() -> Unit)? = null,
 ) {
     Row (
-        modifier = Modifier.height(IntrinsicSize.Max).padding(vertical = 4.dp),
+        modifier = Modifier
+            .height(IntrinsicSize.Max)
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
                 .card()
                 .background(backgroundColor)
                 .padding(16.dp),
@@ -736,7 +779,9 @@ fun InfoCard(
         }
         if (onClick != null && buttonIcon != null) {
             FilledIconButton(
-                modifier = Modifier.fillMaxHeight().width(56.dp),
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(56.dp),
                 shape = MaterialTheme.shapes.large,
                 onClick = onClick,
             ) {

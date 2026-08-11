@@ -28,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.BuildConfig
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.AppPreferenceRepo
@@ -163,7 +164,7 @@ private fun BasesSettings() {
         false to stringResource(R.string.base_1024)
     )
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        DialogPreference(
+        DialogItemSelectPreference(
             modifier = Modifier.weight(1f),
             title = stringResource(R.string.speed_unit),
             icon = painterResource(R.drawable.network_check),
@@ -171,7 +172,7 @@ private fun BasesSettings() {
             values = values,
             onValueChanged = { scope.launch { appPreferenceRepo.setSpeedMetric(it) } },
         )
-        DialogPreference(
+        DialogItemSelectPreference(
             modifier = Modifier.weight(1f),
             title = stringResource(R.string.size_unit),
             icon = painterResource(R.drawable.database),
@@ -222,7 +223,7 @@ private fun ShizukuSettings() {
 private fun BackgroundPermissionPrompt() {
     val permissionManager: PermissionManager = koinInject()
     val activity = LocalActivity.current
-    val backgroundPermission by permissionManager.backgroundPermissionFlow.collectAsState()
+    val backgroundPermission by permissionManager.backgroundPermissionFlow.collectAsStateWithLifecycle()
     SlideAnimatedVisibility(!backgroundPermission) {
         CategoryTitleSmallText(stringResource(R.string.missing_permissions))
         PermissionCard(
@@ -243,9 +244,9 @@ private fun NotificationSettingsScreen(showWarning: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     CategoryTitleSmallText(stringResource(R.string.notifications))
-    val notification by viewModel.notification.collectAsState()
-    val activePlanNotificationsCount by viewModel.activePlanNotificationsCount.collectAsState()
-    val notificationPermission by permissionManager.notificationPermissionFlow.collectAsState()
+    val notification by viewModel.notification.collectAsStateWithLifecycle()
+    val activePlanNotificationsCount by viewModel.activePlanNotificationsCount.collectAsStateWithLifecycle()
+    val notificationPermission by permissionManager.notificationPermissionFlow.collectAsStateWithLifecycle()
     val notificationPermissionCallback =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 

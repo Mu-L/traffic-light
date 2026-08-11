@@ -81,7 +81,6 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.toPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -122,6 +121,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.ExtraGraph
 import com.leekleak.trafficlight.charts.GraphTheme.wifiShape
@@ -453,7 +453,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
             }
             categoryTitleSmall { stringResource(R.string.notifications) }
             item {
-                val notificationPermission by permissionManager.notificationPermissionFlow.collectAsState()
+                val notificationPermission by permissionManager.notificationPermissionFlow.collectAsStateWithLifecycle()
                 val notificationPermissionCallback = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
                 SlideAnimatedVisibility(!notificationPermission) {
