@@ -92,10 +92,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
-import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.ui.navigation.Navigator
+import com.leekleak.trafficlight.ui.theme.LocalBlurEnabled
 import com.leekleak.trafficlight.ui.theme.card
 import com.leekleak.trafficlight.ui.theme.googleSans
 import dev.chrisbanes.haze.HazeInput
@@ -169,8 +168,7 @@ fun PageTitle(
     text: String,
     customElement: @Composable (BoxScope.() -> Unit)? = null,
 ){
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
-    val blurEnabled by appPreferenceRepo.blur.collectAsStateWithLifecycle(true)
+    val blurEnabled = LocalBlurEnabled.current
     Box(
         modifier = Modifier
             .fillMaxWidth()

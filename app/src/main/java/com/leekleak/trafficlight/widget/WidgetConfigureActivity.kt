@@ -30,7 +30,7 @@ import com.leekleak.trafficlight.database.DataPlanSnapshot
 import com.leekleak.trafficlight.model.NetworkUsageManager
 import com.leekleak.trafficlight.ui.plans.ConfiguredDataPlan
 import com.leekleak.trafficlight.ui.plans.UnconfiguredDataPlan
-import com.leekleak.trafficlight.ui.theme.Theme
+import com.leekleak.trafficlight.ui.theme.AppTheme
 import com.leekleak.trafficlight.util.categoryTitle
 import com.leekleak.trafficlight.util.categoryTitleSmall
 import com.leekleak.trafficlight.widget.Widget.Companion.CARRIER_NAME
@@ -53,7 +53,7 @@ class WidgetConfigureActivity : ComponentActivity() {
         setResult(RESULT_CANCELED, resultValue)
 
         setContent {
-            Theme {
+            AppTheme {
                 Scaffold { paddingValues ->
                     Content(appWidgetId, resultValue, paddingValues)
                 }

@@ -35,8 +35,8 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.leekleak.trafficlight.charts.model.ScrollableBarData
+import com.leekleak.trafficlight.ui.theme.LocalSizeMetric
 import com.leekleak.trafficlight.util.DataSize
-import com.leekleak.trafficlight.util.LocalSizeMetric
 import com.leekleak.trafficlight.util.px
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

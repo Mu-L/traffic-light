@@ -30,10 +30,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.TrafficSnapshot
+import com.leekleak.trafficlight.ui.theme.LocalSpeedMetric
 import com.leekleak.trafficlight.util.CategoryTitleSmallText
 import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.HazeScaffold
-import com.leekleak.trafficlight.util.LocalSpeedMetric
 import com.leekleak.trafficlight.util.openLink
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel

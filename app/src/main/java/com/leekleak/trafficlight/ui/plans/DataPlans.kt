@@ -64,10 +64,10 @@ import com.leekleak.trafficlight.model.NetworkUsageManager
 import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.navigation.PlanConfigKey
 import com.leekleak.trafficlight.ui.settings.InfoCard
+import com.leekleak.trafficlight.ui.theme.LocalSizeMetric
 import com.leekleak.trafficlight.ui.theme.card
 import com.leekleak.trafficlight.util.CategoryTitleText
 import com.leekleak.trafficlight.util.DataSize
-import com.leekleak.trafficlight.util.LocalSizeMetric
 import com.leekleak.trafficlight.util.MiniCard
 import com.leekleak.trafficlight.util.MiniCardState
 import com.leekleak.trafficlight.util.PageTitle

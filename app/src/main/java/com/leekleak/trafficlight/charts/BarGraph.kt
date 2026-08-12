@@ -21,7 +21,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.leekleak.trafficlight.charts.model.BarData
-import com.leekleak.trafficlight.util.LocalSizeMetric
+import com.leekleak.trafficlight.ui.theme.LocalSizeMetric
 import com.leekleak.trafficlight.util.px
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay

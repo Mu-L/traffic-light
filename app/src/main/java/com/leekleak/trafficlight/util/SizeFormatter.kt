@@ -1,7 +1,8 @@
 package com.leekleak.trafficlight.util
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.compositionLocalOf
+import com.leekleak.trafficlight.ui.theme.LocalSizeMetric
+import com.leekleak.trafficlight.ui.theme.LocalSpeedMetric
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import kotlin.math.ceil
@@ -18,9 +19,6 @@ enum class DataSizeUnit {
 }
 
 val Long.toKb get() = this / 1024L
-
-val LocalSizeMetric = compositionLocalOf { false }
-val LocalSpeedMetric = compositionLocalOf { false }
 
 @Composable
 fun DataSize.formatted(extraPrecision: Boolean = false, speed: Boolean = false, inBits: Boolean = false): String {

@@ -15,7 +15,7 @@ import com.leekleak.trafficlight.database.DataPlanDao
 import com.leekleak.trafficlight.integrations.PlayServicesProvider
 import com.leekleak.trafficlight.services.notifications.NotificationService
 import com.leekleak.trafficlight.ui.app.App
-import com.leekleak.trafficlight.ui.theme.Theme
+import com.leekleak.trafficlight.ui.theme.AppTheme
 import com.leekleak.trafficlight.widget.WidgetReceiver
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
             val imageLoader: ImageLoader = koinInject()
             setSingletonImageLoaderFactory { imageLoader }
 
-            Theme {
+            AppTheme {
                 App()
             }
         }

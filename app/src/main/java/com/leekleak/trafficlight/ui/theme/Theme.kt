@@ -11,48 +11,12 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.core.view.WindowCompat
 import com.leekleak.trafficlight.R
-import com.leekleak.trafficlight.database.AppPreferenceRepo
-import com.leekleak.trafficlight.util.LocalSizeMetric
-import com.leekleak.trafficlight.util.LocalSpeedMetric
-import org.koin.compose.koinInject
-
-
-@Composable
-fun Theme(
-    content: @Composable () -> Unit
-) {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
-    val theme by appPreferenceRepo.theme.collectAsState(Theme.AutoMaterial)
-    val speedMetric by appPreferenceRepo.speedMetric.collectAsState(false)
-    val sizeMetric by appPreferenceRepo.sizeMetric.collectAsState(false)
-    val isDark = theme.isDark()
-
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as android.app.Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDark
-        }
-    }
-
-    CompositionLocalProvider(
-        LocalSpeedMetric provides speedMetric,
-        LocalSizeMetric provides sizeMetric
-    ) {
-        MaterialTheme (theme.getColors()) { content() }
-    }
-}
 
 enum class Theme {
     AutoMaterial,

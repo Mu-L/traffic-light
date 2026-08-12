@@ -143,6 +143,7 @@ import com.leekleak.trafficlight.ui.settings.PermissionCard
 import com.leekleak.trafficlight.ui.settings.Preference
 import com.leekleak.trafficlight.ui.settings.SliderComponent
 import com.leekleak.trafficlight.ui.settings.SwitchPreference
+import com.leekleak.trafficlight.ui.theme.LocalSizeMetric
 import com.leekleak.trafficlight.ui.theme.backgrounds
 import com.leekleak.trafficlight.ui.theme.card
 import com.leekleak.trafficlight.ui.theme.doHyeonFont
@@ -150,7 +151,6 @@ import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.ui.theme.googleSansEmphasized
 import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.DataSizeUnit
-import com.leekleak.trafficlight.util.LocalSizeMetric
 import com.leekleak.trafficlight.util.PageTitle
 import com.leekleak.trafficlight.util.SearchField
 import com.leekleak.trafficlight.util.SlideAnimatedVisibility

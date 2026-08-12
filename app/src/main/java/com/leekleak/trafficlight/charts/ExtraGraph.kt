@@ -22,9 +22,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.leekleak.trafficlight.database.DataPlanExtra
+import com.leekleak.trafficlight.ui.theme.LocalSizeMetric
 import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.util.DataSize
-import com.leekleak.trafficlight.util.LocalSizeMetric
 import com.leekleak.trafficlight.util.fromTimestamp
 import java.text.DecimalFormat
 import kotlin.math.max

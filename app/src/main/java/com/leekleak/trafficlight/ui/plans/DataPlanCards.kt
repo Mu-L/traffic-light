@@ -43,12 +43,12 @@ import androidx.compose.ui.unit.sp
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.DataPlan
 import com.leekleak.trafficlight.database.DataPlanSnapshot
+import com.leekleak.trafficlight.ui.theme.LocalSizeMetric
 import com.leekleak.trafficlight.ui.theme.backgrounds
 import com.leekleak.trafficlight.ui.theme.carrierFont
 import com.leekleak.trafficlight.ui.theme.doHyeonFont
 import com.leekleak.trafficlight.ui.theme.googleSansEmphasized
 import com.leekleak.trafficlight.util.DataSize
-import com.leekleak.trafficlight.util.LocalSizeMetric
 import com.leekleak.trafficlight.util.simIconRes
 import java.text.DecimalFormat
 
