@@ -1,6 +1,6 @@
 package com.leekleak.trafficlight.database
 
-import androidx.room.Room
+import androidx.room3.Room
 import com.leekleak.trafficlight.database.migrations.MIGRATION_1_2
 import com.leekleak.trafficlight.database.migrations.MIGRATION_2_3
 import com.leekleak.trafficlight.database.migrations.MIGRATION_3_4

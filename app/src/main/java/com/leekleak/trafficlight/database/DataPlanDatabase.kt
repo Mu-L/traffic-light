@@ -1,13 +1,13 @@
 package com.leekleak.trafficlight.database
 
-import androidx.room.Dao
-import androidx.room.Database
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverter
-import androidx.room.TypeConverters
+import androidx.room3.ColumnTypeConverter
+import androidx.room3.ColumnTypeConverters
+import androidx.room3.Dao
+import androidx.room3.Database
+import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
+import androidx.room3.Query
+import androidx.room3.RoomDatabase
 import com.leekleak.trafficlight.database.DataPlan.Companion.NULL_SUBSCRIBER
 import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.DataSizeUnit
@@ -66,23 +66,23 @@ interface DataPlanDao {
 }
 
 @Database(entities = [DataPlan::class], version = 4, exportSchema = true)
-@TypeConverters(Converters::class)
+@ColumnTypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun dataPlanDao(): DataPlanDao
 }
 
 class Converters {
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromDataSize(dataSize: DataSize): Long {
         return dataSize.byteValue
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toDataSize(byteValue: Long): DataSize {
         return DataSize(byteValue)
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toTimeInterval(name: String): TimeInterval {
         return try {
             TimeInterval.valueOf(name)
@@ -91,23 +91,23 @@ class Converters {
         }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromListInt(list: List<Int>): String {
         return list.joinToString(",")
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toListInt(data: String): List<Int> {
         if (data == "") return listOf()
         return data.split(",").mapNotNull { it.trim().toIntOrNull() }
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromListExtras(list: List<DataPlanExtra>): String {
         return Json.encodeToString(list)
     }
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun toListExtras(data: String): List<DataPlanExtra> {
         return try {
             Json.decodeFromString(data)

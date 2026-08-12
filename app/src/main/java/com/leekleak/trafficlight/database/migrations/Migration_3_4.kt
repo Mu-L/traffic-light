@@ -1,11 +1,12 @@
 package com.leekleak.trafficlight.database.migrations
 
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room3.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
 
 val MIGRATION_3_4 = object : Migration(3, 4) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("""
+    override suspend fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("""
             CREATE TABLE IF NOT EXISTS `DataPlan_new` (
                 `hashedSubscriberID` TEXT NOT NULL, 
                 `encryptedSubscriberID` TEXT NOT NULL, 
@@ -37,7 +38,7 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
             )
         """.trimIndent())
 
-        db.execSQL("""
+        connection.execSQL("""
             INSERT INTO `DataPlan_new` (
                 `hashedSubscriberID`, `encryptedSubscriberID`, `simIndex`, `carrierName`, `configured`,
                 `startDate`, `interval`, `intervalMultiplier`, `recurring`, `excludedApps`, 
@@ -56,8 +57,8 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
             FROM `DataPlan`
         """.trimIndent())
 
-        db.execSQL("DROP TABLE `DataPlan`")
+        connection.execSQL("DROP TABLE `DataPlan`")
 
-        db.execSQL("ALTER TABLE `DataPlan_new` RENAME TO `DataPlan`")
+        connection.execSQL("ALTER TABLE `DataPlan_new` RENAME TO `DataPlan`")
     }
 }
