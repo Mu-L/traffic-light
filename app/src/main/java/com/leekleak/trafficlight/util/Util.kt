@@ -98,12 +98,12 @@ import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.theme.card
 import com.leekleak.trafficlight.ui.theme.googleSans
+import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.blur.hazeBlur
+import dev.chrisbanes.haze.blur.materials.HazeMaterials
 import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.materials.HazeMaterials
 import dev.chrisbanes.haze.rememberHazeState
 import org.koin.compose.koinInject
 import java.time.DayOfWeek
@@ -162,7 +162,6 @@ fun DayOfWeek.getName(style: TextStyle) =
 fun Month.getName(style: TextStyle) =
     this.getDisplayName(style, Locale.getDefault()).replaceFirstChar(Char::titlecase)
 
-@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun PageTitle(
     backButton: Boolean = false,
@@ -170,15 +169,20 @@ fun PageTitle(
     text: String,
     customElement: @Composable (BoxScope.() -> Unit)? = null,
 ){
+    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+    val blurEnabled by appPreferenceRepo.blur.collectAsStateWithLifecycle(true)
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .then(
                 hazeState?.let {
-                    Modifier.hazeEffect(state = it, style = HazeMaterials.ultraThin()) {
-                        progressive =
-                            HazeProgressive.verticalGradient(startIntensity = 1f, endIntensity = 0f)
-                    }
+                    Modifier.hazeBlur(
+                        input = HazeInput.Sources(it),
+                        style = HazeMaterials.ultraThin().then {
+                            blurEnabled(blurEnabled)
+                            progressive(HazeProgressive.verticalGradient(startIntensity = 1f, endIntensity = 0f))
+                        }
+                    )
                 } ?: Modifier
             )
     ) {
@@ -532,13 +536,10 @@ fun HazeScaffold(
     actions: @Composable BoxScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
-    val blurEnabled by appPreferenceRepo.blur.collectAsStateWithLifecycle(true)
-
     val paddingSide = paddingValues?.calculateLeftPadding(LayoutDirection.Ltr)
     val paddingTop = paddingValues?.calculateTopPadding()
     val paddingBottom = paddingValues?.calculateBottomPadding()
-    val hazeState: HazeState = rememberHazeState(blurEnabled)
+    val hazeState: HazeState = rememberHazeState()
 
     Box(modifier.fillMaxSize()) {
         Column(

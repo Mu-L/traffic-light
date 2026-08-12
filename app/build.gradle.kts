@@ -151,7 +151,8 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
 
     implementation(libs.haze)
-    implementation(libs.haze.materials)
+    implementation(libs.haze.blur)
+    implementation(libs.haze.blur.materials)
     "playImplementation"(project(":playIntegration"))
     "playImplementation"(libs.ads.mobile.sdk)
     "fullImplementation"(project(":shizukuIntegration"))
