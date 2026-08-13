@@ -70,6 +70,9 @@ import com.leekleak.trafficlight.charts.BarGraph
 import com.leekleak.trafficlight.database.DataType
 import com.leekleak.trafficlight.integrations.Ad
 import com.leekleak.trafficlight.integrations.AdType
+import com.leekleak.trafficlight.ui.components.BackAction
+import com.leekleak.trafficlight.ui.components.HazeScaffold
+import com.leekleak.trafficlight.ui.navigation.NAVBAR_PADDING
 import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.navigation.SettingsKey
 import com.leekleak.trafficlight.ui.theme.card
@@ -77,7 +80,6 @@ import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.util.CategoryTitleText
 import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.EqualHeightRow
-import com.leekleak.trafficlight.util.HazeScaffold
 import com.leekleak.trafficlight.util.MiniCard
 import com.leekleak.trafficlight.util.MiniCardState
 import com.leekleak.trafficlight.util.TrendCard
@@ -89,7 +91,7 @@ import org.koin.compose.koinInject
 
 
 @Composable
-fun Overview(paddingValues: PaddingValues) {
+fun Overview() {
     val viewModel: OverviewVM = koinViewModel()
     val navigator: Navigator = koinInject()
     val haptic = LocalHapticFeedback.current
@@ -103,11 +105,10 @@ fun Overview(paddingValues: PaddingValues) {
 
     HazeScaffold(
         title = stringResource(R.string.today),
-        paddingValues = paddingValues,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        backAction = BackAction.None,
+        extraPadding = PaddingValues(bottom = NAVBAR_PADDING),
         actions = {
             IconButton(
-                modifier = Modifier.align(Alignment.CenterEnd),
                 onClick = {
                     navigator.goTo(SettingsKey)
                     haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
@@ -116,7 +117,7 @@ fun Overview(paddingValues: PaddingValues) {
                 Icon(painterResource(R.drawable.settings), contentDescription = stringResource(R.string.settings))
             }
         }
-    ) {
+    ) { paddingValues ->
         if (windowSizeClass.isWidthAtLeastBreakpoint(400)) {
             EqualHeightRow(
                 modifier = Modifier.padding(horizontal = 16.dp),

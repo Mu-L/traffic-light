@@ -8,7 +8,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -34,6 +33,8 @@ import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.integrations.ShizukuServicesProvider
 import com.leekleak.trafficlight.model.PermissionManager
+import com.leekleak.trafficlight.ui.components.BackAction
+import com.leekleak.trafficlight.ui.components.HazeScaffold
 import com.leekleak.trafficlight.ui.navigation.LibraryLicenseScreen
 import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.navigation.NotificationSettingsKey
@@ -41,7 +42,6 @@ import com.leekleak.trafficlight.ui.theme.Theme
 import com.leekleak.trafficlight.ui.theme.card
 import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.util.CategoryTitleSmallText
-import com.leekleak.trafficlight.util.HazeScaffold
 import com.leekleak.trafficlight.util.SlideAnimatedVisibility
 import com.leekleak.trafficlight.util.openLink
 import com.leekleak.trafficlight.util.px
@@ -50,7 +50,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
 @Composable
-fun Settings(paddingValues: PaddingValues) {
+fun Settings(navigator: Navigator) {
     var showWarning by remember { mutableStateOf(false) }
     if (showWarning) {
         NotificationWarningDialog(onDismiss = { showWarning = false })
@@ -58,11 +58,11 @@ fun Settings(paddingValues: PaddingValues) {
 
     HazeScaffold(
         title = stringResource(R.string.settings),
-        backButton = true,
-        paddingValues = paddingValues,
+        verticalArrangement = Arrangement.Top,
+        backAction = BackAction.Normal(navigator),
     ) {
         BackgroundPermissionPrompt()
-        NotificationSettingsScreen { showWarning = true }
+        NotificationSettings { showWarning = true }
         if (BuildConfig.SHIZUKU) { ShizukuSettings() }
         BasesSettings()
         InterfaceSettings()
@@ -243,7 +243,7 @@ private fun BackgroundPermissionPrompt() {
 }
 
 @Composable
-private fun NotificationSettingsScreen(showWarning: () -> Unit) {
+private fun NotificationSettings(showWarning: () -> Unit) {
     val viewModel = koinViewModel<SettingsVM>()
     val appPreferenceRepo: AppPreferenceRepo = koinInject()
     val permissionManager: PermissionManager = koinInject()

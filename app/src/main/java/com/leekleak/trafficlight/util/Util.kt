@@ -18,7 +18,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -26,10 +25,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -39,12 +35,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ButtonGroupScope
@@ -85,14 +79,15 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.leekleak.trafficlight.R
+import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.theme.LocalBlurEnabled
 import com.leekleak.trafficlight.ui.theme.card
@@ -102,8 +97,6 @@ import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.blur.materials.HazeMaterials
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import org.koin.compose.koinInject
 import java.time.DayOfWeek
 import java.time.Instant
@@ -163,10 +156,10 @@ fun Month.getName(style: TextStyle) =
 
 @Composable
 fun PageTitle(
-    backButton: Boolean = false,
+    backAction: BackAction = BackAction.None,
     hazeState: HazeState? = null,
-    text: String,
-    customElement: @Composable (BoxScope.() -> Unit)? = null,
+    text: String?,
+    customElement: @Composable (RowScope.() -> Unit)? = null,
 ){
     val blurEnabled = LocalBlurEnabled.current
     Box(
@@ -177,19 +170,41 @@ fun PageTitle(
                     Modifier.hazeBlur(
                         input = HazeInput.Sources(it),
                         style = HazeMaterials.ultraThin().then {
-                            blurEnabled(blurEnabled)
                             progressive(HazeProgressive.verticalGradient(startIntensity = 1f, endIntensity = 0f))
+                            blurEnabled(blurEnabled)
                         }
                     )
                 } ?: Modifier
             )
     ) {
-        Box(Modifier
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 6.dp)
-            .fillMaxWidth()) {
-            CategoryTitleText(text, backButton)
+        Row(
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 6.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row (modifier = Modifier.height(TOP_BAR_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
+                if (backAction is BackAction.Normal) {
+                    IconButton(onClick = { backAction.navigator.goBack() }) {
+                        Icon(
+                            painter = painterResource(R.drawable.arrow_back),
+                            contentDescription = stringResource(R.string.go_back),
+                        )
+                    }
+                }
+                text?.let {
+                    Text(
+                        modifier = Modifier.padding(8.dp),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        overflow = TextOverflow.Ellipsis,
+                        text = text
+                    )
+                }
+            }
+            Spacer(Modifier.weight(1f))
             customElement?.let { it() }
         }
     }
@@ -204,7 +219,7 @@ val TOP_BAR_HEIGHT: Dp = 52.dp
 @Composable
 fun CategoryTitleText(text: String, backButton: Boolean = false) {
     val navigator: Navigator = koinInject()
-    Row (modifier = Modifier.height(TOP_BAR_HEIGHT), verticalAlignment = Alignment.CenterVertically){
+    Row (modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically){
         if (backButton) {
             IconButton(onClick = { navigator.goBack() }) {
                 Icon(
@@ -214,7 +229,7 @@ fun CategoryTitleText(text: String, backButton: Boolean = false) {
             }
         }
         Text(
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier.padding(horizontal = 8.dp),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             text = text
@@ -228,7 +243,7 @@ fun LazyListScope.categoryTitleSmall(text: @Composable (() -> String)) = item { 
 @Composable
 fun CategoryTitleSmallText(text: String) {
     Text(
-        modifier = Modifier.padding(8.dp),
+        modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
         text = text,
         style = MaterialTheme.typography.titleMedium,
         color = colorScheme.tertiary
@@ -520,39 +535,5 @@ fun Modifier.clearFocusOnTap(): Modifier {
             awaitFirstDown(pass = PointerEventPass.Initial)
             focusManager.clearFocus()
         }
-    }
-}
-
-@Composable
-fun HazeScaffold(
-    title: String,
-    paddingValues: PaddingValues?,
-    modifier: Modifier = Modifier,
-    scrollState: ScrollState? = rememberScrollState(),
-    backButton: Boolean = false,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    actions: @Composable BoxScope.() -> Unit = {},
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    val paddingSide = paddingValues?.calculateLeftPadding(LayoutDirection.Ltr)
-    val paddingTop = paddingValues?.calculateTopPadding()
-    val paddingBottom = paddingValues?.calculateBottomPadding()
-    val hazeState: HazeState = rememberHazeState()
-
-    Box(modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .background(colorScheme.surface)
-                .fillMaxSize()
-                .hazeSource(hazeState)
-                .padding(horizontal = paddingSide ?: 0.dp)
-                .then(if (scrollState != null) Modifier.verticalScroll(scrollState) else Modifier),
-            verticalArrangement = verticalArrangement
-        ) {
-            paddingTop?.let { Spacer(Modifier.height((it - 8.dp).coerceAtLeast(0.dp))) }
-            content()
-            paddingBottom?.let { Spacer(Modifier.height((it - 8.dp).coerceAtLeast(0.dp))) }
-        }
-        PageTitle(backButton, hazeState, title, actions)
     }
 }

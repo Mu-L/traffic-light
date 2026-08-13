@@ -13,7 +13,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
@@ -30,10 +29,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.TrafficSnapshot
+import com.leekleak.trafficlight.ui.components.BackAction
+import com.leekleak.trafficlight.ui.components.HazeScaffold
+import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.theme.LocalSpeedMetric
 import com.leekleak.trafficlight.util.CategoryTitleSmallText
 import com.leekleak.trafficlight.util.DataSize
-import com.leekleak.trafficlight.util.HazeScaffold
 import com.leekleak.trafficlight.util.openLink
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -41,11 +42,11 @@ import org.koin.compose.koinInject
 import kotlin.math.pow
 
 @Composable
-fun NotificationSettingsScreen(paddingValues: PaddingValues) {
+fun NotificationSettingsScreen(navigator: Navigator) {
     HazeScaffold(
         title = stringResource(R.string.notifications),
-        backButton = true,
-        paddingValues = paddingValues,
+        backAction = BackAction.Normal(navigator),
+        verticalArrangement = Arrangement.Top
     ) {
         NotificationAppearanceSettings()
         BehaviorSettings()

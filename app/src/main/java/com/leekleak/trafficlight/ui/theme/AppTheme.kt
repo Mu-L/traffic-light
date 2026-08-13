@@ -18,7 +18,6 @@ val LocalSizeMetric = compositionLocalOf { false }
 val LocalSpeedMetric = compositionLocalOf { false }
 val LocalBlurEnabled = compositionLocalOf { true }
 
-
 @Composable
 fun AppTheme(
     content: @Composable () -> Unit

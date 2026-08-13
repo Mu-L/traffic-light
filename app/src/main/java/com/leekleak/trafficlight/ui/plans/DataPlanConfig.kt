@@ -136,6 +136,7 @@ import com.leekleak.trafficlight.model.DataUID
 import com.leekleak.trafficlight.model.NetworkUsageManager
 import com.leekleak.trafficlight.model.PermissionManager
 import com.leekleak.trafficlight.model.search
+import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.settings.IconPreference
 import com.leekleak.trafficlight.ui.settings.NotificationWarningDialog
@@ -392,6 +393,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
 
                 Column(
                     modifier = Modifier
+                        .padding(vertical = 4.dp)
                         .card()
                         .padding(vertical = 8.dp),
                 ) {
@@ -552,6 +554,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                 BasicTextField(
                     state = noteState,
                     modifier = Modifier
+                        .padding(vertical = 4.dp)
                         .fillMaxWidth()
                         .card()
                         .padding(12.dp),
@@ -572,7 +575,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
             categoryTitleSmall { stringResource(R.string.background) }
             item {
                 LazyRow(
-                    modifier = Modifier.card(),
+                    modifier = Modifier.padding(vertical = 4.dp).card(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(8.dp)
                 ) {
@@ -585,12 +588,11 @@ fun DataPlanConfig(currentPlan: DataPlan) {
             }
         }
         PageTitle (
-            backButton = true,
+            backAction = BackAction.Normal(navigator),
             hazeState = hazeState,
             text = stringResource(R.string.configure_plan),
             customElement = {
                 IconButton(
-                    modifier = Modifier.align(Alignment.CenterEnd),
                     enabled = newPlan.configured,
                     onClick = { showDeleteDialog = true }
                 ) {
@@ -615,6 +617,7 @@ private fun LazyListScope.typeConfig(
         val haptic = LocalHapticFeedback.current
         Column(
             modifier = Modifier
+                .padding(vertical = 4.dp)
                 .card()
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
@@ -1234,7 +1237,7 @@ private fun LazyListScope.extrasConfig(newPlan: DataPlan, onPlanChange: (plan: D
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 chunk.forEach { item ->

@@ -101,10 +101,12 @@ import com.leekleak.trafficlight.model.AppManager.Companion.tetheringApp
 import com.leekleak.trafficlight.model.DataUID
 import com.leekleak.trafficlight.model.DataUIDApp
 import com.leekleak.trafficlight.model.search
+import com.leekleak.trafficlight.ui.components.BackAction
+import com.leekleak.trafficlight.ui.components.HazeScaffold
+import com.leekleak.trafficlight.ui.navigation.NAVBAR_PADDING
 import com.leekleak.trafficlight.ui.plans.AppSelector
 import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.ui.theme.historyItemFont
-import com.leekleak.trafficlight.util.PageTitle
 import com.leekleak.trafficlight.util.SearchField
 import com.leekleak.trafficlight.util.getName
 import com.leekleak.trafficlight.util.iconToggleButton
@@ -122,13 +124,11 @@ val imageWidth = 32.dp
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun History(paddingValues: PaddingValues) {
+fun History() {
     val viewModel: HistoryVM = koinViewModel()
     val haptic = LocalHapticFeedback.current
 
     val usage: List<ScrollableBarData> by viewModel.usageFlow.collectAsStateWithLifecycle()
-    val sidePadding = remember(paddingValues) { paddingValues.calculateLeftPadding(LayoutDirection.Ltr) }
-    val listContentPadding = PaddingValues(sidePadding, sidePadding, sidePadding, paddingValues.calculateBottomPadding())
 
     val usageQueries by viewModel.queryFlow.collectAsStateWithLifecycle()
     val listParam by viewModel.listParamFlow.collectAsStateWithLifecycle()
@@ -139,17 +139,20 @@ fun History(paddingValues: PaddingValues) {
         onPauseOrDispose {}
     }
 
-    PageTitle(text = stringResource(R.string.history)) {
-        Row(
-            modifier = Modifier.align(Alignment.CenterEnd),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
+    HazeScaffold(
+        title = stringResource(R.string.history),
+        scrollState = null,
+        hazeState = null,
+        backAction = BackAction.None,
+        extraPadding = PaddingValues(bottom = NAVBAR_PADDING),
+        actions = {
             HistoryLegendItem(usageQueries.first, colorScheme.primary, colorScheme.onPrimary)
+            Spacer(Modifier.width(8.dp))
             HistoryLegendItem(usageQueries.second, colorScheme.tertiary, colorScheme.onTertiary)
         }
-    }
-
-    Column {
+    ) { paddingValues ->
+        val sidePadding = remember(paddingValues) { paddingValues.calculateLeftPadding(LayoutDirection.Ltr) }
+        val listContentPadding = PaddingValues(sidePadding, sidePadding, sidePadding, paddingValues.calculateBottomPadding())
         Column (
             modifier = Modifier
                 .padding(

@@ -18,12 +18,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -47,20 +44,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.leekleak.trafficlight.R
-import com.leekleak.trafficlight.ui.history.History
-import com.leekleak.trafficlight.ui.overview.Overview
-import com.leekleak.trafficlight.ui.plans.DataPlanConfig
-import com.leekleak.trafficlight.ui.plans.DataPlans
-import com.leekleak.trafficlight.ui.settings.LibraryLicenseScreen
-import com.leekleak.trafficlight.ui.settings.NotificationSettingsScreen
-import com.leekleak.trafficlight.ui.settings.Settings
-import com.leekleak.trafficlight.ui.settings.UsagePermissionRequest
-import com.leekleak.trafficlight.util.TOP_BAR_HEIGHT
 import org.koin.compose.koinInject
+import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.core.annotation.KoinExperimentalAPI
+
+val NAVBAR_PADDING = FloatingToolbarDefaults.ContainerSize + FloatingToolbarDefaults.ScreenOffset - 8.dp
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, KoinExperimentalAPI::class)
@@ -76,19 +66,7 @@ fun NavigationManager() {
         showBottomBar = mainScreens.contains(currentEntry)
     }
 
-    val toolbarOffset =
-        FloatingToolbarDefaults.ContainerSize +
-        FloatingToolbarDefaults.ScreenOffset
-
-    val topPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val paddingValues =
-        PaddingValues(
-            start = 16.dp,
-            end = 16.dp,
-            top = topPadding + TOP_BAR_HEIGHT,
-            bottom = bottomPadding + if (showBottomBar) toolbarOffset else 8.dp
-        )
+    val entryProvider = koinEntryProvider<Any>()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -128,17 +106,7 @@ fun NavigationManager() {
         NavDisplay(
             backStack = navigator.backStack,
             onBack = { navigator.goBack() },
-            entryProvider = entryProvider {
-                entry<OverviewKey> { Overview(paddingValues) }
-                entry<DataPlansKey> { DataPlans(paddingValues) }
-                entry<HistoryKey> { History(paddingValues) }
-                entry<SettingsKey> { Settings(paddingValues) }
-
-                entry<UsagePermissionRequestKey> { UsagePermissionRequest(paddingValues) }
-                entry<PlanConfigKey> { DataPlanConfig(it.dataPlan) }
-                entry<NotificationSettingsKey> { NotificationSettingsScreen(paddingValues) }
-                entry<LibraryLicenseScreen> { LibraryLicenseScreen(paddingValues) }
-            },
+            entryProvider = entryProvider,
             transitionSpec = {
                 if (backStack.size == 1) fadeIn(tween()) togetherWith fadeOut(tween())
                 else {

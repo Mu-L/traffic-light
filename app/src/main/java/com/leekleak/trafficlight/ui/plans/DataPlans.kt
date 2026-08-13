@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,6 +62,9 @@ import com.leekleak.trafficlight.database.DataPlanSnapshot
 import com.leekleak.trafficlight.integrations.Ad
 import com.leekleak.trafficlight.integrations.AdType
 import com.leekleak.trafficlight.model.NetworkUsageManager
+import com.leekleak.trafficlight.ui.components.BackAction
+import com.leekleak.trafficlight.ui.components.HazeScaffold
+import com.leekleak.trafficlight.ui.navigation.NAVBAR_PADDING
 import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.navigation.PlanConfigKey
 import com.leekleak.trafficlight.ui.settings.InfoCard
@@ -70,7 +74,6 @@ import com.leekleak.trafficlight.util.CategoryTitleText
 import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.MiniCard
 import com.leekleak.trafficlight.util.MiniCardState
-import com.leekleak.trafficlight.util.PageTitle
 import com.leekleak.trafficlight.util.TrendCard
 import com.leekleak.trafficlight.util.openLink
 import com.leekleak.trafficlight.util.shelfShape
@@ -79,9 +82,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
 @Composable
-fun DataPlans(
-    paddingValues: PaddingValues,
-) {
+fun DataPlans() {
     val viewModel: DataPlansVM = koinViewModel()
     val navigator: Navigator = koinInject()
 
@@ -90,17 +91,18 @@ fun DataPlans(
         onPauseOrDispose {}
     }
 
-    val paddingSide = paddingValues.calculateLeftPadding(LayoutDirection.Ltr)
-    val paddingTop = paddingValues.calculateTopPadding()
-    val paddingBottom = paddingValues.calculateBottomPadding()
-    val listContentPadding = PaddingValues(paddingSide, 0.dp, paddingSide, paddingBottom)
-
-    PageTitle(false, null, stringResource(R.string.data_plans))
-
-    Column(
-        modifier = Modifier.padding(top = paddingTop),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+    HazeScaffold(
+        title = stringResource(R.string.data_plans),
+        hazeState = null,
+        scrollState = null,
+        backAction = BackAction.None,
+        extraPadding = PaddingValues(bottom = NAVBAR_PADDING),
+    ) { paddingValues ->
+        val paddingSide = paddingValues.calculateLeftPadding(LayoutDirection.Ltr)
+        val paddingTop = paddingValues.calculateTopPadding()
+        val paddingBottom = paddingValues.calculateBottomPadding()
+        val listContentPadding = PaddingValues(paddingSide, 0.dp, paddingSide, paddingBottom)
+        Spacer(Modifier.height(paddingTop))
         DataPlanPager(paddingSide + 8.dp, navigator)
         DataPlanInsights(listContentPadding)
     }
