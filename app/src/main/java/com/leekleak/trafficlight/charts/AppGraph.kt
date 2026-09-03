@@ -123,14 +123,14 @@ private fun BoxScope.Text(
 ) {
     Text(
         modifier = Modifier
-            .padding(start = 4.dp)
-            .height(60.dp)
+            .padding(start = 6.dp)
+            .height(38.dp)
             .align(Alignment.CenterStart)
             .wrapContentHeight(unbounded = true),
         fontFamily = font,
         color = onPrimaryColor,
         text = text,
-        fontSize = 60.dp.toSp,
+        fontSize = 42.dp.toSp,
         softWrap = false
     )
 }
