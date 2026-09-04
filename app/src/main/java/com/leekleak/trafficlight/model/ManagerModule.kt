@@ -3,11 +3,11 @@ package com.leekleak.trafficlight.model
 import coil3.ImageLoader
 import coil3.request.crossfade
 import com.leekleak.trafficlight.ui.plans.DataPlanLogic
-import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
+import org.koin.plugin.module.dsl.single
 
 val managerModule = module {
-    single { AppManager(get(), get()) }
+    single<AppManager>()
     single { AppIconFetcher.Factory(get()) }
     single {
         ImageLoader.Builder(get())
@@ -18,7 +18,7 @@ val managerModule = module {
             .build()
     }
 
-    single { PermissionManager(androidContext(), get(), get(), get()) }
-    single { NetworkUsageManager(get(), get()) }
-    single { DataPlanLogic(get()) }
+    single<PermissionManager>()
+    single<NetworkUsageManager>()
+    single<DataPlanLogic>()
 }

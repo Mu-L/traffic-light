@@ -4,12 +4,12 @@ import com.leekleak.trafficlight.ui.history.HistoryVM
 import com.leekleak.trafficlight.ui.overview.OverviewVM
 import com.leekleak.trafficlight.ui.plans.DataPlansVM
 import com.leekleak.trafficlight.ui.settings.SettingsVM
-import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import org.koin.plugin.module.dsl.viewModel
 
 val viewModelModule = module {
-    viewModel { OverviewVM(get(), get()) }
-    viewModel { DataPlansVM(get()) }
-    viewModel { HistoryVM(get(), get(), get()) }
-    viewModel { SettingsVM(get(), get()) }
+    viewModel<OverviewVM>()
+    viewModel<DataPlansVM>()
+    viewModel<HistoryVM>()
+    viewModel<SettingsVM>()
 }

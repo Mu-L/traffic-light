@@ -6,11 +6,12 @@ import com.leekleak.trafficlight.database.migrations.MIGRATION_2_3
 import com.leekleak.trafficlight.database.migrations.MIGRATION_3_4
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
+import org.koin.plugin.module.dsl.single
 
 
 val databaseModule = module {
-    single { AppPreferenceRepo(get()) }
-    single { HistoryPreferenceRepo(get(), get()) }
+    single<AppPreferenceRepo>()
+    single<HistoryPreferenceRepo>()
 
     single {
         Room.databaseBuilder(
@@ -26,5 +27,5 @@ val databaseModule = module {
             .build()
     }
     single { get<AppDatabase>().dataPlanDao() }
-    single { DataPlanRepository(get()) }
+    single<DataPlanRepository>()
 }
