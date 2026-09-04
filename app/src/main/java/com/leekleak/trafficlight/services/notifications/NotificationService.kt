@@ -51,6 +51,7 @@ class NotificationService : LifecycleService() {
                     val id = notificationIDCounter.getAndIncrement()
                     val notif = get<SpeedNotification> { parametersOf(lifecycleScope, id) }
                     activeNotifications.add(notif)
+                    notif.start()
                     updateForegroundNotification()
                 } else {
                     val notif = activeNotifications.find { it is SpeedNotification }
@@ -87,8 +88,10 @@ class NotificationService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         unregisterReceiver(screenStateReceiver)
+        activeNotifications.forEach { it.cancel() }
+        activeNotifications.clear()
+        super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

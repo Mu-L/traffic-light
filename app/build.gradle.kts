@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room3)
     alias(libs.plugins.aboutLibraries)
+    alias(libs.plugins.koin)
 }
 
 room3 {

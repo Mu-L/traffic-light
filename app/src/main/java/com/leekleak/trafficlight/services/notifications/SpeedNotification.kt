@@ -15,6 +15,7 @@ import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.DataType
 import com.leekleak.trafficlight.database.DayUsage
 import com.leekleak.trafficlight.database.TrafficSnapshot
+import com.leekleak.trafficlight.database.TrafficSnapshotManager
 import com.leekleak.trafficlight.database.UsageQuery
 import com.leekleak.trafficlight.model.NetworkUsageManager
 import com.leekleak.trafficlight.util.DataSize
@@ -35,7 +36,7 @@ class SpeedNotification(
     private val networkUsageManager: NetworkUsageManager,
     private val connectivityManager: ConnectivityManager,
     private val appPreferenceRepo: AppPreferenceRepo,
-    private val trafficSnapshot: TrafficSnapshot,
+    private val trafficSnapshotManager: TrafficSnapshotManager,
 ) : PersistentNotification(serviceScope, context, notificationManager, notificationId) {
 
     private var notificationBuilderSilent = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID_SILENT)
@@ -54,30 +55,32 @@ class SpeedNotification(
     private var sizeMetric = false
     private var todayUsage = DayUsage()
 
+    @Volatile private var speedSnapshot: TrafficSnapshot = TrafficSnapshot(0, 0, emptySet())
+
     init {
         scope.launch {
             appPreferenceRepo.modeAOD.collect { aodMode = it }
         }
         scope.launch {
-            appPreferenceRepo.speedBits.collect { inBits = it; updateNotification(trafficSnapshot, true) }
+            appPreferenceRepo.speedBits.collect { inBits = it; updateNotification(true) }
         }
         scope.launch {
-            appPreferenceRepo.separateUpDown.collect { separateUpDown = it; updateNotification(trafficSnapshot, true) }
+            appPreferenceRepo.separateUpDown.collect { separateUpDown = it; updateNotification(true) }
         }
         scope.launch {
-            appPreferenceRepo.liveNotification.collect { liveNotification = it; updateNotification(trafficSnapshot, true) }
+            appPreferenceRepo.liveNotification.collect { liveNotification = it; updateNotification(true) }
         }
         scope.launch {
-            appPreferenceRepo.speedThreshold.collect { speedThreshold = it; updateNotification(trafficSnapshot, true) }
+            appPreferenceRepo.speedThreshold.collect { speedThreshold = it; updateNotification(true) }
         }
         scope.launch {
-            appPreferenceRepo.speedThresholdKb.collect { speedThresholdKb = it; updateNotification(trafficSnapshot, true) }
+            appPreferenceRepo.speedThresholdKb.collect { speedThresholdKb = it; updateNotification(true) }
         }
         scope.launch {
-            appPreferenceRepo.speedMetric.collect { speedMetric = it; updateNotification(trafficSnapshot, true) }
+            appPreferenceRepo.speedMetric.collect { speedMetric = it; updateNotification(true) }
         }
         scope.launch {
-            appPreferenceRepo.sizeMetric.collect { sizeMetric = it; updateNotification(trafficSnapshot, true) }
+            appPreferenceRepo.sizeMetric.collect { sizeMetric = it; updateNotification(true) }
         }
         updateBaseNotification()
     }
@@ -85,11 +88,13 @@ class SpeedNotification(
     override fun start() {
         if (job?.isActive == true) return
         job = scope.launch {
-            trafficSnapshot.updateSnapshot()
-            trafficSnapshot.setCurrentAsLast()
+            var lastSnapshot: TrafficSnapshot
+            var currentSnapshot = trafficSnapshotManager.getTrafficSnapshot()
+
             while (true) {
                 Timber.i("Updating notification")
-                trafficSnapshot.updateSnapshot()
+                lastSnapshot = currentSnapshot
+                currentSnapshot = trafficSnapshotManager.getTrafficSnapshot()
 
                 /**
                  * If network speed is changing rapidly, we use this while loop to self-calibrate
@@ -98,10 +103,14 @@ class SpeedNotification(
                  * If network speed is not changing rapidly (i.e. it's zero)
                  * it's quite likely that the next tick will also be zero, so we ignore that and
                  * simply sleep for 1 second
+                 *
+                 * Generally though, the system updates the counter once a second, so 100ms wait hits
+                 * pretty much all the time, except when it's gone out of sync.
                  */
-                if (trafficSnapshot.isCurrentSameAsLast()) {
+                if (lastSnapshot.total == currentSnapshot.total) {
+                    Timber.i("Waiting for notification update")
                     delay(100.milliseconds)
-                    trafficSnapshot.updateSnapshot()
+                    currentSnapshot = trafficSnapshotManager.getTrafficSnapshot()
                 }
 
                 if (updateCounter >= DATA_UPDATE_FREQ) {
@@ -111,12 +120,18 @@ class SpeedNotification(
                     updateCounter++
                 }
 
-                updateNotification(trafficSnapshot)
-                trafficSnapshot.setCurrentAsLast()
+                speedSnapshot = (currentSnapshot - lastSnapshot)
+
+                updateNotification()
                 delay(900.milliseconds)
             }
         }
 
+    }
+
+    override fun cancel() {
+        trafficSnapshotManager.close()
+        super.cancel()
     }
 
     override fun screenStateChange(on: Boolean) {
@@ -126,10 +141,11 @@ class SpeedNotification(
 
     private var lastTitle: String = ""
     private var lastContent: String = ""
-    private suspend fun updateNotification(trafficSnapshot: TrafficSnapshot, force: Boolean = false) {
-        val data = DataSize(trafficSnapshot.totalSpeed).toString(speed = true, inBits = inBits, metric = speedMetric)
-        val upload = DataSize(trafficSnapshot.upSpeed).toString(speed = true, inBits = inBits, metric = speedMetric)
-        val download = DataSize(trafficSnapshot.downSpeed).toString(speed = true, inBits = inBits, metric = speedMetric)
+    private suspend fun updateNotification(force: Boolean = false) {
+        val trafficSnapshot: TrafficSnapshot = speedSnapshot
+        val data = DataSize(trafficSnapshot.total).toString(speed = true, inBits = inBits, metric = speedMetric)
+        val upload = DataSize(trafficSnapshot.up).toString(speed = true, inBits = inBits, metric = speedMetric)
+        val download = DataSize(trafficSnapshot.down).toString(speed = true, inBits = inBits, metric = speedMetric)
         val title = context.getString(R.string.up_down, upload, download)
 
         val spacing = 18
@@ -169,8 +185,8 @@ class SpeedNotification(
                         if (!separateUpDown) {
                             notificationIconHelper.createIcon(speed, unit)
                         } else {
-                            val speedUp = DataSize(trafficSnapshot.upSpeed).toStringParts(inBits = inBits, metric = speedMetric)
-                            val speedDown = DataSize(trafficSnapshot.downSpeed).toStringParts(inBits = inBits, metric = speedMetric)
+                            val speedUp = DataSize(trafficSnapshot.up).toStringParts(inBits = inBits, metric = speedMetric)
+                            val speedDown = DataSize(trafficSnapshot.down).toStringParts(inBits = inBits, metric = speedMetric)
                             notificationIconHelper.createIconSeparate(
                                 speed1 = "${speedUp.first} ${speedUp.third.substring(0,1)}",
                                 speed2 = "${speedDown.first} ${speedDown.third.substring(0,1)}"
@@ -236,7 +252,7 @@ class SpeedNotification(
         if ((speedThreshold &&
             (
                 ((speedThresholdKb == -1L) && !isNetworkAvailable()) ||
-                (trafficSnapshot.totalSpeed.toKb < speedThresholdKb)
+                (speedSnapshot.total.toKb < speedThresholdKb)
             )
         )){
             silentChannelTicks++
@@ -251,7 +267,8 @@ class SpeedNotification(
             connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)?.run {
                 hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
                 hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+                hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
+                hasTransport(NetworkCapabilities.TRANSPORT_VPN)
             } ?: false
         } else {
             connectivityManager.activeNetworkInfo?.run {

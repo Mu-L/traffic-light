@@ -26,7 +26,7 @@ abstract class PersistentNotification(
     internal var notification: Notification = notificationBuilder.build()
     internal var notificationIconHelper = NotificationIconHelper(context)
     abstract fun start()
-    fun cancel() {
+    open fun cancel() {
         scope.cancel()
         try {
             notificationManager.cancel(notificationId)

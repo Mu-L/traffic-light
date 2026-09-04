@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.AppPreferenceRepo
-import com.leekleak.trafficlight.database.TrafficSnapshot
+import com.leekleak.trafficlight.database.TrafficSnapshotManager
 import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.components.HazeScaffold
 import com.leekleak.trafficlight.ui.navigation.Navigator
@@ -130,17 +130,8 @@ private fun BehaviorSettings() {
         onValueChanged = { scope.launch { appPreferenceRepo.setModeAOD(it) } }
     )
 
-    val altVpn by appPreferenceRepo.altVpn.collectAsState(false)
-    SwitchPreference(
-        title = stringResource(R.string.alt_vpn_workaround),
-        summary = stringResource(R.string.alt_vpn_workaround_description),
-        icon = painterResource(R.drawable.vpn),
-        value = altVpn,
-        onValueChanged = { scope.launch { appPreferenceRepo.setAltVpn(it) } }
-    )
-
     val forceFallback by appPreferenceRepo.forceFallback.collectAsState(false)
-    val doesFallbackWork = remember { TrafficSnapshot.doesFallbackWork() }
+    val doesFallbackWork = remember { TrafficSnapshotManager.doesFallbackWork() }
     SwitchPreference(
         title = stringResource(R.string.force_fallback),
         summary = if (doesFallbackWork) stringResource(R.string.force_fallback_description)

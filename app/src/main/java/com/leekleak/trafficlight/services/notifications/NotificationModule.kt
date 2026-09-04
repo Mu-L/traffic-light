@@ -1,12 +1,15 @@
 package com.leekleak.trafficlight.services.notifications
 
 import com.leekleak.trafficlight.database.DataPlan
-import com.leekleak.trafficlight.database.TrafficSnapshot
+import com.leekleak.trafficlight.database.TrafficSnapshotManager
 import kotlinx.coroutines.CoroutineScope
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
+import org.koin.plugin.module.dsl.factory
 
 val notificationModule = module {
+    factory<TrafficSnapshotManager>()
+
     factory { (scope: CoroutineScope, id: Int) ->
         SpeedNotification(
             serviceScope = scope,
@@ -16,7 +19,7 @@ val notificationModule = module {
             notificationManager = get(),
             connectivityManager = get(),
             appPreferenceRepo = get(),
-            trafficSnapshot = TrafficSnapshot(scope, get(), get())
+            trafficSnapshotManager = get()
         )
     }
     factory { (scope: CoroutineScope, id: Int, dataPlan: DataPlan) ->

@@ -11,6 +11,7 @@ kotlin = "2.4.10"
 kotlinxSerializationJson = "1.11.0"
 ksp = "2.3.6"
 koin-bom = "4.2.2"
+koinPlugin = "1.1.0"
 material3 = "1.5.0-alpha27"
 compose-ui = "1.12.0"
 
@@ -112,3 +113,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 androidx-room3 = { id = "androidx.room3", version.ref = "room3" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }
+koin = { id = "io.insert-koin.compiler.plugin", version.ref = "koinPlugin" }

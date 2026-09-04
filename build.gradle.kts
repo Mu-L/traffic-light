@@ -7,4 +7,5 @@ plugins {
     alias(libs.plugins.androidx.room3) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.aboutLibraries) apply false
+    alias(libs.plugins.koin) apply false
 }
