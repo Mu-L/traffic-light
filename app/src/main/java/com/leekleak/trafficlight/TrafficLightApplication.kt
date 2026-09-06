@@ -33,18 +33,20 @@ class TrafficLightApplication : Application() {
             Timber.plant(Timber.DebugTree())
         }
 
-        StrictMode.setVmPolicy(
-            VmPolicy.Builder(StrictMode.getVmPolicy()).apply {
-                detectAll()
-                penaltyLog()
-            }.build()
-        )
-        StrictMode.setThreadPolicy(
-            ThreadPolicy.Builder(StrictMode.getThreadPolicy())
-                .detectAll()
-                .penaltyLog()
-                .build()
-        )
+        if (BuildConfig.DEBUG) {
+            StrictMode.setVmPolicy(
+                VmPolicy.Builder(StrictMode.getVmPolicy()).apply {
+                    detectAll()
+                    penaltyLog()
+                }.build()
+            )
+            StrictMode.setThreadPolicy(
+                ThreadPolicy.Builder(StrictMode.getThreadPolicy())
+                    .detectAll()
+                    .penaltyLog()
+                    .build()
+            )
+        }
 
         startKoin {
             androidContext(this@TrafficLightApplication)
