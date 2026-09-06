@@ -492,21 +492,6 @@ fun HistoryFilter(onDismiss: () -> Unit) {
                         Text(stringResource(R.string.set_as_default))
                     }
                 }
-                Button(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onDismiss()
-                    },
-                    contentPadding = contentPadding
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(painterResource(R.drawable.close), null)
-                        Text(stringResource(R.string.close))
-                    }
-                }
                 Spacer(Modifier.width(8.dp))
             }
         }
