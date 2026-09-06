@@ -1,0 +1,10 @@
+Netowork speed tracking:
+- Reworked the under-the-hood logic
+- Should now be accurate both with regular and split-tunneling VPN connections
+- Please report any unforeseen issues
+
+Enhancements:
+- Allow editing existing data plans
+- Many UI enhancements
+- A few big dependency bumps and migrations and general polish
+
