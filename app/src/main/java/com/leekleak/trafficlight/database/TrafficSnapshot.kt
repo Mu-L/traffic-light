@@ -59,7 +59,7 @@ class TrafficSnapshotManager(
             }
         }
 
-        // Default network request ignores VPNs, so it's should(i hope) be safe from double-counting
+        // Default network request ignores VPNs, so it should (i hope) be safe from double-counting
         connectivityManager.registerNetworkCallback(NetworkRequest.Builder().build(), callback)
     }
 
@@ -70,8 +70,8 @@ class TrafficSnapshotManager(
         }
     }
 
-    suspend fun getTrafficSnapshot(): TrafficSnapshot =
-        if (useFallback) {
+    suspend fun getTrafficSnapshot(): TrafficSnapshot {
+        return if (useFallback) {
             try {
                 fallbackUpdateSnapshot()
             } catch (e: Exception) {
@@ -82,16 +82,18 @@ class TrafficSnapshotManager(
                         useFallback = false
                         regularUpdateSnapshot()
                     }
+
                     else -> throw e
                 }
             }
         } else {
             regularUpdateSnapshot()
         }
+    }
 
-    private fun regularUpdateSnapshot(): TrafficSnapshot {
+    private suspend fun regularUpdateSnapshot(): TrafficSnapshot = withContext(Dispatchers.IO) {
         val inter = interfaces
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        return@withContext if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             TrafficSnapshot(
                 up = inter.sumOf { TrafficStats.getTxBytes(it).coerceAtLeast(0L) },
                 down = inter.sumOf { TrafficStats.getRxBytes(it).coerceAtLeast(0L) },
@@ -127,7 +129,7 @@ class TrafficSnapshotManager(
         private val wifiTxFile: File by lazy { File("/sys/class/net/wlan0/statistics/tx_bytes") }
         private val ethRxFile: File by lazy { File("/sys/class/net/eth0/statistics/rx_bytes") }
         private val ethTxFile: File by lazy { File("/sys/class/net/eth0/statistics/tx_bytes") }
-        fun doesFallbackWork(): Boolean = mobileRxFile.canRead() || wifiRxFile.canRead() || ethRxFile.canRead()
+        suspend fun doesFallbackWork(): Boolean = withContext(Dispatchers.IO) { mobileRxFile.canRead() || wifiRxFile.canRead() || ethRxFile.canRead() }
     }
 }
 

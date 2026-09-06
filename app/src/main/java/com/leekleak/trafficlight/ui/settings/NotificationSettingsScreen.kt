@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -131,7 +132,9 @@ private fun BehaviorSettings() {
     )
 
     val forceFallback by appPreferenceRepo.forceFallback.collectAsState(false)
-    val doesFallbackWork = remember { TrafficSnapshotManager.doesFallbackWork() }
+    val doesFallbackWork by produceState(initialValue = false) {
+        value = TrafficSnapshotManager.doesFallbackWork()
+    }
     SwitchPreference(
         title = stringResource(R.string.force_fallback),
         summary = if (doesFallbackWork) stringResource(R.string.force_fallback_description)
