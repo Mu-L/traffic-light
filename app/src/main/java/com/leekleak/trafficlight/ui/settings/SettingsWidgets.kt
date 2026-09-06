@@ -28,8 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -43,7 +41,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.toPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -68,6 +65,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.GraphTheme
@@ -75,6 +73,7 @@ import com.leekleak.trafficlight.ui.theme.Theme
 import com.leekleak.trafficlight.ui.theme.card
 import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.util.CategoryTitleSmallText
+import com.leekleak.trafficlight.util.clearFocusOnTap
 import com.leekleak.trafficlight.util.px
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -83,15 +82,11 @@ import kotlin.math.roundToInt
 fun NotificationWarningDialog(
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    FancyDialog (
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.notification_aggregation_warning_title)) },
-        text = { Text(stringResource(R.string.notification_aggregation_warning_text)) },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text(stringResource(R.string.close))
-            }
-        }
+        title = stringResource(R.string.notification_aggregation_warning_title),
+        icon = painterResource(R.drawable.warning),
+        content = { Text(stringResource(R.string.notification_aggregation_warning_text)) },
     )
 }
 
@@ -289,13 +284,63 @@ fun SliderPreference(
 }
 
 @Composable
+fun FancyDialog(
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String,
+    icon: Painter,
+    actionButton: @Composable (() -> Unit) = {},
+    content: @Composable (ColumnScope.() -> Unit),
+) {
+    Dialog(onDismissRequest = onDismissRequest) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .card(colorScheme.surfaceContainerLow)
+                .padding(16.dp)
+                .clearFocusOnTap(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            val font = remember { googleSans(weight = 600f) }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.size(32.dp),
+                    painter = icon,
+                    contentDescription = null,
+                    tint = colorScheme.onSurface
+                )
+                Text(
+                    text = title,
+                    fontFamily = font,
+                    fontSize = 20.sp,
+                    color = colorScheme.onSurface
+                )
+            }
+            content()
+            Row(
+                modifier = Modifier.align(Alignment.End),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(onClick = onDismissRequest) {
+                    Text(stringResource(R.string.close))
+                }
+                actionButton()
+            }
+        }
+    }
+}
+
+@Composable
 fun DialogPreference(
     modifier: Modifier = Modifier,
     title: String,
     summary: String? = null,
-    icon: Painter? = null,
+    icon: Painter,
     enabled: Boolean = true,
-    content: @Composable (ColumnScope.(MutableState<Boolean>) -> Unit) = {}
+    content: @Composable (ColumnScope.() -> Unit),
 ) {
     val expanded = remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
@@ -312,15 +357,14 @@ fun DialogPreference(
         },
     )
     if (expanded.value) {
-        Dialog(onDismissRequest = { expanded.value = false }) {
-            Column(modifier = Modifier
-                .card()
-                .background(colorScheme.surface)
-                .padding(16.dp)
-            ) {
-                content(expanded)
-            }
-        }
+        FancyDialog(
+            onDismissRequest = { expanded.value = false },
+            title = title,
+            icon = icon,
+            content = {
+                content()
+            },
+        )
     }
 }
 
@@ -329,13 +373,12 @@ fun <T> DialogItemSelectPreference(
     modifier: Modifier = Modifier,
     title: String,
     summary: String? = null,
-    icon: Painter? = null,
+    icon: Painter,
     value: T,
     values: List<Pair<T, String>>,
     enabled: Boolean = true,
     onValueChanged: (T) -> Unit
 ) {
-    val font = remember { googleSans(weight = 600f) }
     val currentValueLabel = values.find { it.first == value }?.second ?: value.toString()
     val haptic = LocalHapticFeedback.current
     DialogPreference(
@@ -343,13 +386,8 @@ fun <T> DialogItemSelectPreference(
         title = title,
         summary = summary ?: currentValueLabel,
         icon = icon,
-        enabled = enabled
-    ) { expanded ->
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineSmallEmphasized,
-            fontFamily = font
-        )
+        enabled = enabled,
+    ) {
         Column(
             modifier = Modifier
                 .padding(vertical = 12.dp)
@@ -367,7 +405,7 @@ fun <T> DialogItemSelectPreference(
                             onValueChanged(itemValue)
                             haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                         }
-                        .background(if (itemValue == value) colorScheme.primary else colorScheme.surfaceContainer)
+                        .background(if (itemValue == value) colorScheme.primary else colorScheme.background)
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -390,16 +428,6 @@ fun <T> DialogItemSelectPreference(
                         )
                     }
                 }
-            }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
-            TextButton(onClick = { expanded.value = false }) {
-                Text(stringResource(R.string.close))
             }
         }
     }

@@ -47,7 +47,6 @@ import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.DatePicker
@@ -59,6 +58,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
@@ -118,7 +118,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.ExtraGraph
@@ -136,6 +135,7 @@ import com.leekleak.trafficlight.model.PermissionManager
 import com.leekleak.trafficlight.model.search
 import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.navigation.Navigator
+import com.leekleak.trafficlight.ui.settings.FancyDialog
 import com.leekleak.trafficlight.ui.settings.IconPreference
 import com.leekleak.trafficlight.ui.settings.NotificationWarningDialog
 import com.leekleak.trafficlight.ui.settings.PermissionCard
@@ -234,11 +234,12 @@ fun DataPlanConfig(currentPlan: DataPlan) {
     }
 
     if (showDeleteDialog) {
-        AlertDialog(
+        FancyDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text(stringResource(R.string.delete_plan)) },
-            text = { Text(stringResource(R.string.delete_plan_confirmation)) },
-            confirmButton = {
+            title = stringResource(R.string.delete_plan),
+            icon = painterResource(R.drawable.deleted),
+            content = {Text(stringResource(R.string.delete_plan_confirmation))},
+            actionButton = {
                 TextButton(
                     onClick = {
                         scope.launch(Dispatchers.IO) {
@@ -250,11 +251,6 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                     }
                 ) {
                     Text(stringResource(R.string.delete), color = colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -1233,7 +1229,7 @@ private fun LazyListScope.extrasConfig(newPlan: DataPlan, onPlanChange: (plan: D
                                     .padding(4.dp)
                                     .size(32.dp),
                                 shape = MaterialTheme.shapes.small,
-                                colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                                colors = IconButtonDefaults.filledIconButtonColors(
                                     containerColor = colorScheme.errorContainer.copy(alpha = 0.8f),
                                     contentColor = colorScheme.onErrorContainer
                                 )
@@ -1320,163 +1316,130 @@ private fun AddExtraDialog(
         initialMinute = fromTimestamp(expiryDate).minute
     )
 
-    val font = remember { googleSans(weight = 600f) }
-
-    Dialog(onDismissRequest = onDismiss) {
+    FancyDialog(
+        onDismissRequest = onDismiss,
+        title = stringResource(R.string.add_extra),
+        icon = painterResource(R.drawable.add),
+        actionButton = {
+            Button(onClick = {
+                val amountValue = amountState.text.toString().toDoubleOrNull() ?: 1.0
+                val usageValue = usageState.text.toString().toDoubleOrNull() ?: 0.0
+                val base = if (metric) 1000.0 else 1024.0
+                val amountBytes = (amountValue * amountUnit.toBits(base)).toLong()
+                val usageBytes = (usageValue * usageUnit.toBits(base)).toLong()
+                onConfirm(
+                    DataPlanExtra(
+                        dataAmount = DataSize(amountBytes),
+                        unit = amountUnit,
+                        dataUsed = usageBytes,
+                        startStamp = startDate,
+                        expiryStamp = expiryDate,
+                        expired = false
+                    )
+                )
+                onDismiss()
+            }) {
+                Text(stringResource(R.string.save))
+            }
+        }
+    ) {
         Column(
-            modifier = Modifier
-                .card()
-                .background(colorScheme.surface)
-                .clearFocusOnTap()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = stringResource(R.string.add_extra),
-                style = typography.headlineSmallEmphasized,
-                fontFamily = font
+            Text(stringResource(R.string.amount), style = typography.titleMedium, color = colorScheme.tertiary)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BasicTextField(
+                    state = amountState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .card()
+                        .background(colorScheme.background)
+                        .padding(8.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    textStyle = typography.bodyLarge.copy(color = colorScheme.onSurface),
+                    cursorBrush = SolidColor(colorScheme.onSurface),
+                    lineLimits = TextFieldLineLimits.SingleLine
+                )
+                Button(
+                    onClick = {
+                        amountUnit = if (amountUnit == DataSizeUnit.GB) DataSizeUnit.MB else DataSizeUnit.GB
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    Text(amountUnit.name)
+                }
+            }
+
+            Text(stringResource(R.string.usage), style = typography.titleMedium, color = colorScheme.tertiary)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BasicTextField(
+                    state = usageState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .card()
+                        .background(colorScheme.background)
+                        .padding(8.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    textStyle = typography.bodyLarge.copy(color = colorScheme.onSurface),
+                    cursorBrush = SolidColor(colorScheme.onSurface),
+                    lineLimits = TextFieldLineLimits.SingleLine
+                )
+                Button(
+                    onClick = {
+                        usageUnit = if (usageUnit == DataSizeUnit.GB) DataSizeUnit.MB else DataSizeUnit.GB
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    Text(usageUnit.name)
+                }
+            }
+
+            Text(stringResource(R.string.start), style = typography.titleMedium, color = colorScheme.tertiary)
+            DateAndTimePicker(
+                selectedDate = fromTimestamp(startDate).toLocalDate(),
+                selectedTime = fromTimestamp(startDate).toLocalTime(),
+                datePickerState = startDatePickerState,
+                timePickerState = startTimePickerState,
+                onDateSelect = { date ->
+                    val time = fromTimestamp(startDate).toLocalTime()
+                    startDate =
+                        date.atStartOfDay().toTimestamp() + time.toSecondOfDay() * 1000
+                },
+                onTimeSelect = { time ->
+                    val date = fromTimestamp(startDate).toLocalDate()
+                    startDate =
+                        date.atStartOfDay().toTimestamp() + time.toSecondOfDay() * 1000
+                }
             )
 
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(stringResource(R.string.amount), style = typography.titleMedium, color = colorScheme.tertiary)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    BasicTextField(
-                        state = amountState,
-                        modifier = Modifier
-                            .weight(1f)
-                            .card()
-                            .background(colorScheme.surfaceContainer)
-                            .padding(8.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        textStyle = typography.bodyLarge.copy(color = colorScheme.onSurface),
-                        cursorBrush = SolidColor(colorScheme.onSurface),
-                        lineLimits = TextFieldLineLimits.SingleLine
-                    )
-                    Button(
-                        onClick = {
-                            amountUnit = if (amountUnit == DataSizeUnit.GB) DataSizeUnit.MB else DataSizeUnit.GB
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        shape = MaterialTheme.shapes.medium,
-                        contentPadding = PaddingValues(horizontal = 12.dp)
-                    ) {
-                        Text(amountUnit.name)
-                    }
+            Text(stringResource(R.string.expiry), style = typography.titleMedium, color = colorScheme.tertiary)
+            DateAndTimePicker(
+                selectedDate = fromTimestamp(expiryDate).toLocalDate(),
+                selectedTime = fromTimestamp(expiryDate).toLocalTime(),
+                datePickerState = expiryDatePickerState,
+                timePickerState = expiryTimePickerState,
+                onDateSelect = { date ->
+                    val time = fromTimestamp(expiryDate).toLocalTime()
+                    expiryDate =
+                        date.atStartOfDay().toTimestamp() + time.toSecondOfDay() * 1000
+                },
+                onTimeSelect = { time ->
+                    val date = fromTimestamp(expiryDate).toLocalDate()
+                    expiryDate =
+                        date.atStartOfDay().toTimestamp() + time.toSecondOfDay() * 1000
                 }
-
-                Text(stringResource(R.string.usage), style = typography.titleMedium, color = colorScheme.tertiary)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    BasicTextField(
-                        state = usageState,
-                        modifier = Modifier
-                            .weight(1f)
-                            .card()
-                            .background(colorScheme.surfaceContainer)
-                            .padding(8.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        textStyle = typography.bodyLarge.copy(color = colorScheme.onSurface),
-                        cursorBrush = SolidColor(colorScheme.onSurface),
-                        lineLimits = TextFieldLineLimits.SingleLine
-                    )
-                    Button(
-                        onClick = {
-                            usageUnit = if (usageUnit == DataSizeUnit.GB) DataSizeUnit.MB else DataSizeUnit.GB
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        shape = MaterialTheme.shapes.medium,
-                        contentPadding = PaddingValues(horizontal = 12.dp)
-                    ) {
-                        Text(usageUnit.name)
-                    }
-                }
-
-                Text(stringResource(R.string.start), style = typography.titleMedium, color = colorScheme.tertiary)
-                Box(
-                    Modifier
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(colorScheme.surface)
-                ) {
-                    DateAndTimePicker(
-                        selectedDate = fromTimestamp(startDate).toLocalDate(),
-                        selectedTime = fromTimestamp(startDate).toLocalTime(),
-                        datePickerState = startDatePickerState,
-                        timePickerState = startTimePickerState,
-                        onDateSelect = { date ->
-                            val time = fromTimestamp(startDate).toLocalTime()
-                            startDate =
-                                date.atStartOfDay().toTimestamp() + time.toSecondOfDay() * 1000
-                        },
-                        onTimeSelect = { time ->
-                            val date = fromTimestamp(startDate).toLocalDate()
-                            startDate =
-                                date.atStartOfDay().toTimestamp() + time.toSecondOfDay() * 1000
-                        }
-                    )
-                }
-
-                Text(stringResource(R.string.expiry), style = typography.titleMedium, color = colorScheme.tertiary)
-                Box(
-                    Modifier
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(colorScheme.surface)
-                ) {
-                    DateAndTimePicker(
-                        selectedDate = fromTimestamp(expiryDate).toLocalDate(),
-                        selectedTime = fromTimestamp(expiryDate).toLocalTime(),
-                        datePickerState = expiryDatePickerState,
-                        timePickerState = expiryTimePickerState,
-                        onDateSelect = { date ->
-                            val time = fromTimestamp(expiryDate).toLocalTime()
-                            expiryDate =
-                                date.atStartOfDay().toTimestamp() + time.toSecondOfDay() * 1000
-                        },
-                        onTimeSelect = { time ->
-                            val date = fromTimestamp(expiryDate).toLocalDate()
-                            expiryDate =
-                                date.atStartOfDay().toTimestamp() + time.toSecondOfDay() * 1000
-                        }
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.close))
-                }
-                Button(onClick = {
-                    val amountValue = amountState.text.toString().toDoubleOrNull() ?: 1.0
-                    val usageValue = usageState.text.toString().toDoubleOrNull() ?: 0.0
-                    val base = if (metric) 1000.0 else 1024.0
-                    val amountBytes = (amountValue * amountUnit.toBits(base)).toLong()
-                    val usageBytes = (usageValue * usageUnit.toBits(base)).toLong()
-                    onConfirm(
-                        DataPlanExtra(
-                            dataAmount = DataSize(amountBytes),
-                            unit = amountUnit,
-                            dataUsed = usageBytes,
-                            startStamp = startDate,
-                            expiryStamp = expiryDate,
-                            expired = false
-                        )
-                    )
-                    onDismiss()
-                }) {
-                    Text(stringResource(R.string.save))
-                }
-            }
+            )
         }
     }
 }
