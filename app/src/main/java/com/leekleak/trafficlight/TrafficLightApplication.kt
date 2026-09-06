@@ -6,7 +6,6 @@ import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_DEFAULT
 import android.app.NotificationManager.IMPORTANCE_HIGH
 import android.app.NotificationManager.IMPORTANCE_LOW
-import android.os.Build
 import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
 import android.os.StrictMode.VmPolicy
@@ -36,31 +35,13 @@ class TrafficLightApplication : Application() {
 
         StrictMode.setVmPolicy(
             VmPolicy.Builder(StrictMode.getVmPolicy()).apply {
-                detectActivityLeaks()
-                detectLeakedClosableObjects()
-                detectLeakedRegistrationObjects()
-                detectFileUriExposure()
-                detectContentUriWithoutPermission()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    detectCredentialProtectedWhileLocked()
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        detectIncorrectContextUse()
-                        detectUnsafeIntentLaunch()
-                    }
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                    detectBlockedBackgroundActivityLaunch()
-                }
+                detectAll()
                 penaltyLog()
             }.build()
         )
         StrictMode.setThreadPolicy(
             ThreadPolicy.Builder(StrictMode.getThreadPolicy())
-                .detectUnbufferedIo()
-                .detectResourceMismatches()
-                .detectDiskReads()
-                .detectDiskWrites()
-                .detectCustomSlowCalls()
+                .detectAll()
                 .penaltyLog()
                 .build()
         )
