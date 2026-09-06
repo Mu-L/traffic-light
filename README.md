@@ -55,6 +55,13 @@ Make sure to follow the __issue template__ when reporting bugs or suggesting fea
 
 ## Contributions
 
+### LLM Policy
+This is a complex app that relies on interfacing with obscure Android APIs and is thus hard to test and verify. This makes it a poor flow for agentic workflows and their use for contributions is heavily discouraged.
+
+Please do not use LLMs for generating issues and pull request descriptions. They are not capable of providing any extra useful info and just make the whole thing harder to read. Instead use the predefined feature request/bug report templates.
+
+If the policy is not followed you will receive a warning and on second strike be permanently banned from contributing to this project.
+
 ### Code
 Contributors are welcome, however please create an issue first. When asking/adding features please elaborate why that feature is useful to you.
 
