@@ -8,12 +8,12 @@ activityCompose = "1.13.0"
 
 datastore = "1.2.1"
 haze = "2.0.0-rc01"
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 kotlinxSerializationJson = "1.11.0"
 ksp = "2.3.6"
 koin-bom = "4.2.2"
-koinPlugin = "1.1.0"
-material3 = "1.5.0-alpha27"
+koinPlugin = "1.2.1"
+material3 = "1.5.0-alpha28"
 compose-ui = "1.12.1"
 
 nav3Core = "1.1.7"
@@ -33,7 +33,6 @@ kotlinxCoroutinesTest = "1.11.0"
 turbine = "1.2.1"
 robolectric = "4.17"
 aboutLibraries = "15.2.0"
-leakcanary = "1.0.0"
 
 [libraries]
 

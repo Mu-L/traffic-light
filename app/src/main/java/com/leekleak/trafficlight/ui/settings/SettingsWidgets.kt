@@ -38,6 +38,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.material3.toPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -446,9 +447,11 @@ fun SliderComponent(
 ) {
     val haptic = LocalHapticFeedback.current
     val fontFamilyBold = remember { googleSans(weight = 800f) }
-    val currentIndex = remember(value, values) {
-        values.indexOfFirst { it.first == value }.coerceAtLeast(0)
-    }
+    val sliderState = rememberSliderState(
+        value = values.indexOfFirst { it.first == value }.coerceAtLeast(0).toFloat(),
+        steps = (values.size - 2).coerceAtLeast(0),
+        trackRange = 0f..((values.size - 1).coerceAtLeast(0).toFloat()),
+    )
 
     Column(modifier = modifier.alpha(if (enabled) 1f else 0.38f)) {
         Row(
@@ -469,16 +472,24 @@ fun SliderComponent(
         Row(verticalAlignment = Alignment.CenterVertically) {
             val interactionSource = remember { MutableInteractionSource() }
             Slider(
+                state = sliderState,
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 8.dp),
-                value = currentIndex.toFloat(),
                 onValueChange = {
                     val newIndex = it.roundToInt()
-                    if (newIndex != currentIndex && newIndex in values.indices) {
+                    if (newIndex != sliderState.value.roundToInt() && newIndex in values.indices) {
                         haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                        onValueChanged(values[newIndex].first)
                     }
+
+                    // It seems that if we define onValueChange logic manually,
+                    // we also have to update the state manually.
+                    // Seems a bit weird to me, so check if this can be removed later.
+                    // Last checked compose.material3 version: 1.15.0-alpha28
+                    sliderState.value = it
+                },
+                onValueChangeFinished = {
+                    onValueChanged(values[sliderState.value.roundToInt()].first)
                 },
                 thumb = {
                     SliderDefaults.Thumb(
@@ -488,11 +499,10 @@ fun SliderComponent(
                 },
                 interactionSource = interactionSource,
                 enabled = enabled,
-                valueRange = 0f..((values.size - 1).coerceAtLeast(0).toFloat()),
-                steps = (values.size - 2).coerceAtLeast(0)
             )
-            val valueLabel = remember(currentIndex, values) {
-                val pair = values.getOrNull(currentIndex)
+
+            val valueLabel = remember(sliderState.value.roundToInt(), values) {
+                val pair = values.getOrNull(sliderState.value.roundToInt())
                 pair?.second ?: pair?.first?.toString() ?: ""
             }
             AnimatedContent(
