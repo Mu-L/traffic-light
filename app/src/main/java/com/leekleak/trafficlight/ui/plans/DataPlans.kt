@@ -111,7 +111,7 @@ fun DataPlans(
             appPreferenceRepo = appPreferenceRepo,
             networkUsageManager = networkUsageManager
         )
-        DataPlanInsights(listContentPadding, viewModel, appPreferenceRepo)
+        DataPlanInsights(listContentPadding, viewModel)
     }
 }
 
@@ -220,12 +220,11 @@ private fun DataPlanPager(
 private fun DataPlanInsights(
     contentPadding: PaddingValues,
     viewModel: DataPlansVM,
-    appPreferenceRepo: AppPreferenceRepo
 ) {
     val planPair by viewModel.planFlow.collectAsState(null)
     val topAppsList by viewModel.topApps.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
-    val adsEnabled by appPreferenceRepo.ads.collectAsState(false)
+    val adsEnabled by viewModel.adsEnabled.collectAsState(false)
 
     LazyColumn(
         modifier = Modifier
@@ -264,7 +263,7 @@ private fun DataPlanInsights(
             if (plan.mainDataSize.byteValue > 0) usageInsights(viewModel)
             extras(snapshot)
             thisWeek(viewModel)
-            if (adsEnabled) item { Ad(AdType.NativeBanner, colorScheme.surface) }
+            if (adsEnabled) item { Ad(true, AdType.NativeBanner, colorScheme.surface) }
             if (plan.mainDataSize.byteValue > 0) budgetInsights(viewModel)
             topApps(topAppsList)
         }

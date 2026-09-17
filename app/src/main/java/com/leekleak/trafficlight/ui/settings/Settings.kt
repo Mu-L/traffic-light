@@ -46,11 +46,11 @@ import com.leekleak.trafficlight.util.SlideAnimatedVisibility
 import com.leekleak.trafficlight.util.openLink
 import com.leekleak.trafficlight.util.px
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun Settings(
     navigator: Navigator,
+    viewModel: SettingsVM,
     appPreferenceRepo: AppPreferenceRepo,
     permissionManager: PermissionManager,
     shizukuServicesProvider: ShizukuServicesProvider,
@@ -68,6 +68,7 @@ fun Settings(
         BackgroundPermissionPrompt(permissionManager)
         NotificationSettings(
             navigator = navigator,
+            viewModel = viewModel,
             permissionManager = permissionManager,
             appPreferenceRepo = appPreferenceRepo,
         ) { showWarning = true }
@@ -255,11 +256,11 @@ private fun BackgroundPermissionPrompt(permissionManager: PermissionManager) {
 @Composable
 private fun NotificationSettings(
     navigator: Navigator,
+    viewModel: SettingsVM,
     permissionManager: PermissionManager,
     appPreferenceRepo: AppPreferenceRepo,
     showWarning: () -> Unit
 ) {
-    val viewModel = koinViewModel<SettingsVM>()
     val scope = rememberCoroutineScope()
 
     CategoryTitleSmallText(stringResource(R.string.notifications))

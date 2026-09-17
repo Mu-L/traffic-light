@@ -39,10 +39,11 @@ import com.leekleak.trafficlight.widget.Widget.Companion.SIM_NUMBER
 import com.leekleak.trafficlight.widget.Widget.Companion.SUBSCRIBER_ID_HASH
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
-import org.koin.compose.koinInject
 
 class WidgetConfigureActivity : ComponentActivity() {
     private val appPreferenceRepo: AppPreferenceRepo by inject()
+    private val dataPlanDao: DataPlanDao by inject()
+    private val networkUsageManager: NetworkUsageManager by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,8 +68,6 @@ class WidgetConfigureActivity : ComponentActivity() {
 
     @Composable
     private fun Content(appWidgetId: Int, resultValue: Intent, paddingValues: PaddingValues) {
-        val dataPlanDao: DataPlanDao = koinInject()
-        val networkUsageManager: NetworkUsageManager = koinInject()
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
 

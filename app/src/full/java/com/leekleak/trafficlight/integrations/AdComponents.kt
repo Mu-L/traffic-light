@@ -4,6 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 @Composable
-fun Ad(adLocation: AdType, backgroundColor: Color? = null) {
+fun Ad(adsEnabled: Boolean, adLocation: AdType, backgroundColor: Color? = null) {
     // No ads in the full version
 }

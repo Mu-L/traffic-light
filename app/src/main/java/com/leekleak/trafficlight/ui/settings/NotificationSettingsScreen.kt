@@ -38,17 +38,16 @@ import com.leekleak.trafficlight.util.CategoryTitleSmallText
 import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.openLink
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 import kotlin.math.pow
 
 @Composable
-fun NotificationSettingsScreen(navigator: Navigator, appPreferenceRepo: AppPreferenceRepo) {
+fun NotificationSettingsScreen(navigator: Navigator, viewModel: SettingsVM, appPreferenceRepo: AppPreferenceRepo) {
     HazeScaffold(
         title = stringResource(R.string.notifications),
         backAction = BackAction.Normal(navigator),
         verticalArrangement = Arrangement.Top
     ) {
-        NotificationAppearanceSettings(appPreferenceRepo)
+        NotificationAppearanceSettings(viewModel, appPreferenceRepo)
         BehaviorSettings(appPreferenceRepo)
         NotificationChannelSettings(appPreferenceRepo)
     }
@@ -144,15 +143,14 @@ private fun BehaviorSettings(appPreferenceRepo: AppPreferenceRepo) {
 }
 
 @Composable
-private fun NotificationAppearanceSettings(appPreferenceRepo: AppPreferenceRepo) {
-    val viewModel: SettingsVM = koinViewModel()
+private fun NotificationAppearanceSettings(viewModel: SettingsVM, appPreferenceRepo: AppPreferenceRepo) {
     val scope = rememberCoroutineScope()
 
     val separateUpDown by appPreferenceRepo.separateUpDown.collectAsState(false)
     val liveNotification by viewModel.liveNotification.collectAsStateWithLifecycle()
     CategoryTitleSmallText(stringResource(R.string.appearance))
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-        LiveNotificationSettings(appPreferenceRepo)
+        LiveNotificationSettings(viewModel, appPreferenceRepo)
     }
 
     SwitchPreference(
@@ -176,8 +174,7 @@ private fun NotificationAppearanceSettings(appPreferenceRepo: AppPreferenceRepo)
 }
 
 @Composable
-private fun LiveNotificationSettings(appPreferenceRepo: AppPreferenceRepo) {
-    val viewModel: SettingsVM = koinViewModel()
+private fun LiveNotificationSettings(viewModel: SettingsVM, appPreferenceRepo: AppPreferenceRepo) {
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
 

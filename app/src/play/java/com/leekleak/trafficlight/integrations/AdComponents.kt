@@ -30,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,21 +57,17 @@ import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdRequest
 import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdView
 import com.leekleak.trafficlight.BuildConfig
 import com.leekleak.trafficlight.R
-import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.ui.theme.card
-import org.koin.compose.koinInject
 import timber.log.Timber
 
 val LocalNativeAdView = compositionLocalOf<NativeAdView?> { null }
 
 @Composable
 fun Ad(
-    appPreferenceRepo: AppPreferenceRepo
+    adsEnabled: Boolean,
     adType: AdType,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
 ) {
-    val adsEnabled by appPreferenceRepo.ads.collectAsState(false)
-
     if (!adsEnabled) return
 
     val adUnitId = when(adType) {

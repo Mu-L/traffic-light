@@ -352,7 +352,8 @@ fun OverviewItems(viewModel: OverviewVM) {
             AppGraph(list, isWifi)
         }
     }
-    Ad(AdType.NativeBanner)
+    val adsEnabled by viewModel.adsEnabled.collectAsStateWithLifecycle()
+    Ad(adsEnabled, AdType.NativeBanner)
     if (data.isNotEmpty()) {
         CategoryTitleText(stringResource(R.string.this_week))
         Box(

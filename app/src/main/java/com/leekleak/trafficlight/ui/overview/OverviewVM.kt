@@ -27,6 +27,8 @@ class OverviewVM(
     val query = appPreferenceRepo.overviewDataType.map { UsageQuery(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, UsageQuery(DataType.Mobile))
 
+    val adsEnabled = appPreferenceRepo.ads.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     @OptIn(FlowPreview::class)
     private val refresh = combine(query, refreshTrigger) { q, _ -> q }.debounce(100.milliseconds)
     fun refresh() = refreshTrigger.tryEmit(Unit)

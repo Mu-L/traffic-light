@@ -28,14 +28,14 @@ val navigationModule = module {
     }
     navigation<OverviewKey> { Overview(get(), get()) }
     navigation<DataPlansKey> { DataPlans(get(), get(), get(), get(), get()) }
-    navigation<HistoryKey> { History(get()) }
+    navigation<HistoryKey> { History(get(), get()) }
     navigation<IperfScreenKey> { IperfScreen(get()) }
-    navigation<SettingsKey> { Settings(get(), get(), get(), get()) }
+    navigation<SettingsKey> { Settings(get(), get(), get(), get(), get()) }
     navigation<UsagePermissionRequestKey> { UsagePermissionRequest(get(), get()) }
     navigation<PlanConfigKey> { key ->
         val viewModel: DataPlanConfigVM = koinViewModel(key = key.dataPlan.hashedSubscriberID) { parametersOf(key.dataPlan) }
         DataPlanConfig(get(), viewModel)
     }
-    navigation<NotificationSettingsKey> { NotificationSettingsScreen(get(), get()) }
+    navigation<NotificationSettingsKey> { NotificationSettingsScreen(get(), get(), get()) }
     navigation<LibraryLicenseScreen> { LibraryLicenseScreen(get()) }
 }
