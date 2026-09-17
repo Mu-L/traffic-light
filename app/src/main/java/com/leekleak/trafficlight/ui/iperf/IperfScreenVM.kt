@@ -17,8 +17,9 @@ class IperfScreenVM(
     private val connectivityManager: ConnectivityManager,
     private val wifiManager: WifiManager,
 ): ViewModel() {
-    val ipFlow: Flow<String> = callbackFlow {
+    val ipFlow: Flow<String?> = callbackFlow {
         var networkCallback: ConnectivityManager.NetworkCallback? = null
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val request = NetworkRequest.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -30,7 +31,16 @@ class IperfScreenVM(
                         linkProperties: LinkProperties
                     ) {
                         super.onLinkPropertiesChanged(network, linkProperties)
-                        trySend(linkProperties.linkAddresses.joinToString("\n"))
+                        trySend(linkProperties.linkAddresses.map { it.address }
+                            .filterIsInstance<java.net.Inet4Address>()
+                            .mapNotNull { it.hostAddress }
+                            .joinToString("\n")
+                        )
+                    }
+
+                    override fun onLost(network: Network) {
+                        super.onLost(network)
+                        trySend(null)
                     }
                 }
             connectivityManager.registerNetworkCallback(request, networkCallback)

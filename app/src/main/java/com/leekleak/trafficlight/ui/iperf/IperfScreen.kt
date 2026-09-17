@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 fun IperfScreen(
     viewModel: IperfScreenVM
 ) {
-    val ips by viewModel.ipFlow.collectAsState(initial = "")
+    val ips by viewModel.ipFlow.collectAsState(null)
 
     HazeScaffold(
         title = stringResource(R.string.today),
@@ -69,7 +69,7 @@ fun IperfScreen(
         }) {
             Text("Cancel")
         }
-        Text(text = ips)
+        ips?.let { Text(text = it) }
         Text(text = output)
     }
 }
