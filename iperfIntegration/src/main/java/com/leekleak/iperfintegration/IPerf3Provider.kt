@@ -8,7 +8,7 @@ import kotlin.coroutines.resume
 
 object IPerf3Provider {
     init {
-        System.loadLibrary("traffic_light")
+        System.loadLibrary("iperf_integration")
     }
 
     suspend fun runTest(arguments: Array<String>, callback: IperfCallback) =

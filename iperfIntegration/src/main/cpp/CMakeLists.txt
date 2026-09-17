@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 4.1.2)
 
-project("traffic_light" C)
+project("iperf_integration" C)
 
 set(IPERF_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/iperf/src")
 set(JNI_SRC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/iperf_jni.c")
@@ -18,7 +18,8 @@ configure_file(
     @ONLY
 )
 
-add_library(traffic_light SHARED
+add_library(iperf_integration
+    SHARED
     "${JNI_SRC_FILE}"
     "${IPERF_SRC_DIR}/cjson.c"
     "${IPERF_SRC_DIR}/dscp.c"
@@ -40,12 +41,12 @@ add_library(traffic_light SHARED
     "${IPERF_SRC_DIR}/units.c"
 )
 
-target_include_directories(traffic_light PRIVATE
+target_include_directories(iperf_integration PRIVATE
     "${IPERF_SRC_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
-target_compile_definitions(traffic_light PRIVATE HAVE_CONFIG_H HAVE_PTHREAD)
+target_compile_definitions(iperf_integration PRIVATE HAVE_CONFIG_H HAVE_PTHREAD)
 
 find_package(Threads REQUIRED)
-target_link_libraries(traffic_light Threads::Threads log android)
+target_link_libraries(iperf_integration Threads::Threads log android)
