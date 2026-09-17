@@ -97,7 +97,6 @@ import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.blur.materials.HazeMaterials
-import org.koin.compose.koinInject
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -217,11 +216,10 @@ fun LazyListScope.categoryTitle(text: @Composable (() -> String)){
 val TOP_BAR_HEIGHT: Dp = 52.dp
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun CategoryTitleText(text: String, backButton: Boolean = false) {
-    val navigator: Navigator = koinInject()
+fun CategoryTitleText(text: String, navigator: Navigator? = null) {
     Row (modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically){
-        if (backButton) {
-            IconButton(onClick = { navigator.goBack() }) {
+        navigator?.let {
+            IconButton(onClick = { it.goBack() }) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
                     contentDescription = stringResource(R.string.go_back),

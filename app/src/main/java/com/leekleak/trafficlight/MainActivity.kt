@@ -13,8 +13,10 @@ import coil3.compose.setSingletonImageLoaderFactory
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.DataPlanDao
 import com.leekleak.trafficlight.integrations.PlayServicesProvider
+import com.leekleak.trafficlight.model.PermissionManager
 import com.leekleak.trafficlight.services.notifications.NotificationService
 import com.leekleak.trafficlight.ui.app.App
+import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.theme.AppTheme
 import com.leekleak.trafficlight.widget.WidgetReceiver
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +26,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
-import org.koin.compose.koinInject
 import kotlin.time.Duration.Companion.seconds
 
 class MainActivity : ComponentActivity() {
@@ -32,6 +33,9 @@ class MainActivity : ComponentActivity() {
     private val appPreferenceRepo: AppPreferenceRepo by inject()
     private val dataPlanDao: DataPlanDao by inject()
     private val playServicesProvider: PlayServicesProvider by inject()
+    private val imageLoader: ImageLoader by inject()
+    private val navigator: Navigator by inject()
+    private val permissionManager: PermissionManager by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,11 +63,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val imageLoader: ImageLoader = koinInject()
             setSingletonImageLoaderFactory { imageLoader }
 
-            AppTheme {
-                App()
+            AppTheme(appPreferenceRepo) {
+                App(
+                    navigator = navigator,
+                    permissionManager = permissionManager
+                )
             }
         }
     }

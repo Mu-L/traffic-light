@@ -86,14 +86,13 @@ import com.leekleak.trafficlight.util.TrendCard
 import com.leekleak.trafficlight.util.formattedParts
 import com.leekleak.trafficlight.util.iconToggleButton
 import com.leekleak.trafficlight.util.px
-import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 
 @Composable
-fun Overview() {
-    val viewModel: OverviewVM = koinViewModel()
-    val navigator: Navigator = koinInject()
+fun Overview(
+    navigator: Navigator,
+    viewModel: OverviewVM
+) {
     val haptic = LocalHapticFeedback.current
     val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
     val scrollState = rememberScrollState()
@@ -117,38 +116,37 @@ fun Overview() {
                 Icon(painterResource(R.drawable.settings), contentDescription = stringResource(R.string.settings))
             }
         }
-    ) { paddingValues ->
+    ) {
         if (windowSizeClass.isWidthAtLeastBreakpoint(400)) {
             EqualHeightRow(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 first = {
                     Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
-                        HeroItems(scrollState)
+                        HeroItems(viewModel, scrollState)
                     }
                 },
                 second = {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OverviewItems()
+                        OverviewItems(viewModel)
                     }
                 },
                 spacing = 16.dp
             )
         } else {
-            HeroItems(scrollState)
-            OverviewItems()
+            HeroItems(viewModel, scrollState)
+            OverviewItems(viewModel)
         }
     }
 }
 
 @Composable
-private fun HeroItems(scrollState: ScrollState) {
-    OverviewHero(scrollState)
+private fun HeroItems(viewModel: OverviewVM, scrollState: ScrollState) {
+    OverviewHero(viewModel, scrollState)
     Row(
         modifier = Modifier.height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        PredictionCard()
-        val viewModel: OverviewVM = koinViewModel()
+        PredictionCard(viewModel)
         val trend by viewModel.trend.collectAsStateWithLifecycle()
         TrendCard(trend)
     }
@@ -156,8 +154,7 @@ private fun HeroItems(scrollState: ScrollState) {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun OverviewHero(scrollState: ScrollState) {
-    val viewModel: OverviewVM = koinViewModel()
+private fun OverviewHero(viewModel: OverviewVM, scrollState: ScrollState) {
     val haptic = LocalHapticFeedback.current
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -317,8 +314,7 @@ private fun OverviewHero(scrollState: ScrollState) {
 }
 
 @Composable
-private fun RowScope.PredictionCard() {
-    val viewModel: OverviewVM = koinViewModel()
+private fun RowScope.PredictionCard(viewModel: OverviewVM) {
     val prediction by viewModel.prediction.collectAsStateWithLifecycle()
     val string = DataSize(prediction).formattedParts(extraPrecision = true)
 
@@ -339,8 +335,7 @@ private fun RowScope.PredictionCard() {
 }
 
 @Composable
-fun OverviewItems() {
-    val viewModel: OverviewVM = koinViewModel()
+fun OverviewItems(viewModel: OverviewVM) {
     val data by viewModel.weekUsage.collectAsStateWithLifecycle()
     val topAppsList by viewModel.topApps.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()

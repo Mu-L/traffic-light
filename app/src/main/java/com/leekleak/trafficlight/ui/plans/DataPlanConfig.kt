@@ -86,7 +86,6 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -122,16 +121,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.ExtraGraph
 import com.leekleak.trafficlight.charts.GraphTheme.wifiShape
-import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.DataPlan
-import com.leekleak.trafficlight.database.DataPlanDao
 import com.leekleak.trafficlight.database.DataPlanExtra
 import com.leekleak.trafficlight.database.TimeInterval
-import com.leekleak.trafficlight.integrations.ShizukuServicesProvider
-import com.leekleak.trafficlight.model.AppManager
 import com.leekleak.trafficlight.model.DataUID
-import com.leekleak.trafficlight.model.NetworkUsageManager
-import com.leekleak.trafficlight.model.PermissionManager
 import com.leekleak.trafficlight.model.search
 import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.navigation.Navigator
@@ -162,11 +155,6 @@ import com.leekleak.trafficlight.util.px
 import com.leekleak.trafficlight.util.toTimestamp
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.koin.compose.koinInject
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.time.LocalDate
@@ -177,60 +165,20 @@ import kotlin.math.pow
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun DataPlanConfig(currentPlan: DataPlan) {
-    val appManager: AppManager = koinInject()
-    val dataPlanDao: DataPlanDao = koinInject()
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
-    val networkUsageManager: NetworkUsageManager = koinInject()
-    val shizukuServicesProvider: ShizukuServicesProvider = koinInject()
-
-    val scope = rememberCoroutineScope()
-    val navigator: Navigator = koinInject()
-    val permissionManager: PermissionManager = koinInject()
-
+fun DataPlanConfig(
+    navigator: Navigator,
+    viewModel: DataPlanConfigVM
+) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val activity = LocalActivity.current
 
-    var newPlan by remember(currentPlan) { mutableStateOf(currentPlan.copy()) }
+    val newPlan by viewModel.newPlan.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.Default) {
-            val lastUpdateStamp = newPlan.updateUsage(networkUsageManager)
-            val planToCalculate = newPlan.copy()
-            val snapshot = planToCalculate.getUsageSnapshot(networkUsageManager)
-            
-            newPlan = planToCalculate.copy(
-                mainDataUsed = snapshot.mainDataUsed,
-                extras = snapshot.extras,
-                lastUpdateStamp = lastUpdateStamp
-            )
-        }
-    }
-
-    var showForegroundNotificationWarning by remember { mutableStateOf(false) }
+    val showForegroundNotificationWarning by viewModel.showForegroundNotificationWarning.collectAsStateWithLifecycle()
     if (showForegroundNotificationWarning) {
-        NotificationWarningDialog(onDismiss = { showForegroundNotificationWarning = false })
-    }
-
-    val onCalculateUsage = {
-        scope.launch {
-            val planToCalculate = newPlan.copy()
-            withContext(Dispatchers.Default) {
-                planToCalculate.mainDataUsed = 0
-                planToCalculate.lastUpdateStamp = 0
-                planToCalculate.extras = planToCalculate.extras.map { it.copy(dataUsed = 0) }
-
-                val snapshot = planToCalculate.getUsageSnapshot(networkUsageManager)
-                
-                newPlan = planToCalculate.copy(
-                    mainDataUsed = snapshot.mainDataUsed,
-                    extras = snapshot.extras,
-                    lastUpdateStamp = planToCalculate.lastUpdateStamp
-                )
-            }
-        }
+        NotificationWarningDialog(onDismiss = viewModel::hideForegroundNotificationWarning)
     }
 
     if (showDeleteDialog) {
@@ -242,12 +190,9 @@ fun DataPlanConfig(currentPlan: DataPlan) {
             actionButton = {
                 TextButton(
                     onClick = {
-                        scope.launch(Dispatchers.IO) {
-                            dataPlanDao.delete(currentPlan.hashedSubscriberID)
-                            shizukuServicesProvider.updateSimData()
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            navigator.goBack()
-                        }
+                        viewModel.delete()
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        navigator.goBack()
                     }
                 ) {
                     Text(stringResource(R.string.delete), color = colorScheme.error)
@@ -281,7 +226,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                 ) {
                     TextButton(
                         onClick = {
-                            onCalculateUsage()
+                            viewModel.onCalculateUsage()
                             haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                         },
                     ) {
@@ -296,28 +241,9 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                     }
 
                     Button(onClick = {
-                        scope.launch(Dispatchers.IO) {
-                            val planToSnapshot = newPlan.copy()
-                            val snapshot = planToSnapshot.getUsageSnapshot(networkUsageManager)
-
-                            val volatileMain = snapshot.mainDataUsed - planToSnapshot.mainDataUsed
-                            val volatileExtras = snapshot.extras.associate { it.id to (it.dataUsed - (planToSnapshot.extras.find { e -> e.id == it.id }?.dataUsed ?: 0L)) }
-                            val expiry = newPlan.getStartDate(true)
-
-                            val planToSave = newPlan.copy(
-                                mainDataUsed = newPlan.mainDataUsed - volatileMain,
-                                extras = newPlan.extras.map { it.copy(dataUsed = it.dataUsed - (volatileExtras[it.id] ?: 0L)) },
-                                lastUpdateStamp = planToSnapshot.lastUpdateStamp,
-                                lastSafetyState = -1,
-                                mainExpiryStamp = expiry.toTimestamp(),
-                                budgetOvershotNotified = false,
-                                configured = true
-                            )
-                            dataPlanDao.add(planToSave)
-                            shizukuServicesProvider.updateSimData()
-                            haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                            navigator.goBack()
-                        }
+                        viewModel.save()
+                        haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                        navigator.goBack()
                     }) {
                         Icon(
                             painter = painterResource(R.drawable.save),
@@ -347,33 +273,37 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                 PlanSizeConfig (
                     size = size,
                     unit = newPlan.mainDataSizeUnit,
-                    onSizeUpdate = {
-                        newPlan = newPlan.copy(mainDataSize = DataSize(it))
+                    onSizeUpdate = { size ->
+                        viewModel.updatePlan { it.copy(mainDataSize = DataSize(size)) }
                     },
-                    onUnitUpdate = {
-                        newPlan = newPlan.copy(
-                            mainDataSize = DataSize((size * it.toBits(if (metric) 1000.0 else 1024.0)).toLong()),
-                            mainDataSizeUnit = it
-                        )
+                    onUnitUpdate = { unit ->
+                        viewModel.updatePlan {
+                            it.copy(
+                                mainDataSize = DataSize((size * unit.toBits(if (metric) 1000.0 else 1024.0)).toLong()),
+                                mainDataSizeUnit = unit
+                            )
+                        }
                     }
                 )
             }
             categoryTitleSmall { stringResource(R.string.type) }
             typeConfig(
                 plan = newPlan,
-                onManualUsageChange = {
-                    newPlan = newPlan.copy(
-                        mainDataUsed = it,
-                    )
+                onManualUsageChange = { usage ->
+                    viewModel.updatePlan {
+                        it.copy(
+                            mainDataUsed = usage,
+                        )
+                    }
                 },
-            ) {
-                newPlan = it
+            ) { plan ->
+                viewModel.updatePlan { plan }
             }
             categoryTitleSmall { stringResource(R.string.extras) }
-            extrasConfig(newPlan) { newPlan = newPlan.copy(extras = it.extras) }
+            extrasConfig(newPlan) { plan -> viewModel.updatePlan { it.copy(extras = plan.extras) } }
             categoryTitleSmall { stringResource(R.string.zero_rated_apps) }
             item {
-                val suspiciousApps by produceState(emptyList()) { value = appManager.getAllApps() }
+                val suspiciousApps by viewModel.suspiciousApps.collectAsStateWithLifecycle()
 
                 val excludedApps by remember { derivedStateOf {
                     suspiciousApps.filter { newPlan.excludedApps.contains(it.uid) }
@@ -407,7 +337,9 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                                     drawRect(brush = brush, blendMode = BlendMode.DstIn)
                                 }
                         ) { uid ->
-                            newPlan = newPlan.copy(excludedApps = newPlan.excludedApps.filter { it != uid })
+                            viewModel.updatePlan {
+                                it.copy(excludedApps = it.excludedApps.filter { app -> app != uid })
+                            }
                         }
                         FilledIconButton (
                             modifier = Modifier.padding(end = 8.dp),
@@ -436,7 +368,13 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                         ) {
                             HorizontalDivider()
                             AppSelector(searchResults, Modifier.fillMaxWidth()) { uid ->
-                                newPlan = newPlan.copy(excludedApps = newPlan.excludedApps + (includedApps.map { it.uid }.filter { it == uid }))
+                                viewModel.updatePlan {
+                                    it.copy(excludedApps = it.excludedApps +
+                                        (includedApps
+                                            .map { app -> app.uid }
+                                            .filter { app -> app == uid })
+                                    )
+                                }
                             }
                             SearchField(textFieldState)
                         }
@@ -446,7 +384,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
             }
             categoryTitleSmall { stringResource(R.string.notifications) }
             item {
-                val notificationPermission by permissionManager.notificationPermissionFlow.collectAsStateWithLifecycle()
+                val notificationPermission by viewModel.notificationPermission.collectAsStateWithLifecycle()
                 val notificationPermissionCallback = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
                 SlideAnimatedVisibility(!notificationPermission) {
@@ -470,21 +408,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                     icon = painterResource(R.drawable.usage_notification),
                     value = newPlan.notification,
                     enabled = notificationPermission,
-                    onValueChanged = {
-                        if (it && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                            scope.launch {
-                                val speedNotif = appPreferenceRepo.notification.first()
-                                val activePlanNotifs = dataPlanDao.getActivePlansWithNotificationsCountFlow().first()
-                                val anotherPlanHasIt = if (currentPlan.notification) activePlanNotifs > 1 else activePlanNotifs > 0
-                                if (speedNotif || anotherPlanHasIt) {
-                                    showForegroundNotificationWarning = true
-                                }
-                            }
-                        }
-                        scope.launch {
-                            newPlan = newPlan.copy(notification = it)
-                        }
-                    },
+                    onValueChanged = viewModel::onForegroundNotificationValueChanged,
                 )
                 SlideAnimatedVisibility(newPlan.notification && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
                     Row (
@@ -497,11 +421,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                             icon = painterResource(R.drawable.app_badging),
                             value = newPlan.liveNotification,
                             enabled = notificationPermission,
-                            onValueChanged = {
-                                scope.launch {
-                                    newPlan = newPlan.copy(liveNotification = it)
-                                }
-                            }
+                            onValueChanged = viewModel::onLiveNotificationValueChanged
                         )
                         IconPreference(
                             title = stringResource(R.string.help),
@@ -517,11 +437,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                     icon = painterResource(R.drawable.warning),
                     value = newPlan.budgetWarning,
                     enabled = notificationPermission,
-                    onValueChanged = {
-                        scope.launch {
-                            newPlan = newPlan.copy(budgetWarning = it)
-                        }
-                    }
+                    onValueChanged = viewModel::onBudgetNotificationValueChanged
                 )
                 SwitchPreference(
                     title = stringResource(R.string.safety_status_warning),
@@ -529,18 +445,14 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                     icon = painterResource(R.drawable.shield),
                     value = newPlan.safetyWarning,
                     enabled = notificationPermission,
-                    onValueChanged = {
-                        scope.launch {
-                            newPlan = newPlan.copy(safetyWarning = it)
-                        }
-                    }
+                    onValueChanged = viewModel::onSafetyNotificationValueChanged
                 )
             }
             categoryTitleSmall { stringResource(R.string.notes) }
             item {
                 val noteState = rememberTextFieldState(newPlan.note)
                 LaunchedEffect(noteState.text) {
-                    newPlan = newPlan.copy(note = noteState.text.toString())
+                    viewModel.updatePlan { it.copy(note = noteState.text.toString()) }
                 }
                 BasicTextField(
                     state = noteState,
@@ -572,7 +484,7 @@ fun DataPlanConfig(currentPlan: DataPlan) {
                 ) {
                     items(backgrounds.size) { i ->
                         BackgroundSelector(i, newPlan) {
-                            newPlan = newPlan.copy(uiBackground = i)
+                            viewModel.updatePlan { it.copy(uiBackground = i) }
                         }
                     }
                 }

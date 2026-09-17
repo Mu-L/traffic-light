@@ -39,25 +39,23 @@ import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.openLink
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 import kotlin.math.pow
 
 @Composable
-fun NotificationSettingsScreen(navigator: Navigator) {
+fun NotificationSettingsScreen(navigator: Navigator, appPreferenceRepo: AppPreferenceRepo) {
     HazeScaffold(
         title = stringResource(R.string.notifications),
         backAction = BackAction.Normal(navigator),
         verticalArrangement = Arrangement.Top
     ) {
-        NotificationAppearanceSettings()
-        BehaviorSettings()
-        NotificationChannelSettings()
+        NotificationAppearanceSettings(appPreferenceRepo)
+        BehaviorSettings(appPreferenceRepo)
+        NotificationChannelSettings(appPreferenceRepo)
     }
 }
 
 @Composable
-private fun NotificationChannelSettings() {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+private fun NotificationChannelSettings(appPreferenceRepo: AppPreferenceRepo) {
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
 
@@ -116,8 +114,7 @@ private fun NotificationChannelSettings() {
 }
 
 @Composable
-private fun BehaviorSettings() {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+private fun BehaviorSettings(appPreferenceRepo: AppPreferenceRepo) {
     val scope = rememberCoroutineScope()
 
     CategoryTitleSmallText(stringResource(R.string.behavior))
@@ -147,8 +144,7 @@ private fun BehaviorSettings() {
 }
 
 @Composable
-private fun NotificationAppearanceSettings() {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+private fun NotificationAppearanceSettings(appPreferenceRepo: AppPreferenceRepo) {
     val viewModel: SettingsVM = koinViewModel()
     val scope = rememberCoroutineScope()
 
@@ -156,7 +152,7 @@ private fun NotificationAppearanceSettings() {
     val liveNotification by viewModel.liveNotification.collectAsStateWithLifecycle()
     CategoryTitleSmallText(stringResource(R.string.appearance))
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-        LiveNotificationSettings()
+        LiveNotificationSettings(appPreferenceRepo)
     }
 
     SwitchPreference(
@@ -180,8 +176,7 @@ private fun NotificationAppearanceSettings() {
 }
 
 @Composable
-private fun LiveNotificationSettings() {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+private fun LiveNotificationSettings(appPreferenceRepo: AppPreferenceRepo) {
     val viewModel: SettingsVM = koinViewModel()
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()

@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import com.leekleak.trafficlight.R
-import org.koin.compose.koinInject
 import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.core.annotation.KoinExperimentalAPI
 
@@ -55,8 +54,7 @@ val NAVBAR_PADDING = FloatingToolbarDefaults.ContainerSize + FloatingToolbarDefa
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, KoinExperimentalAPI::class)
 @Composable
-fun NavigationManager() {
-    val navigator: Navigator = koinInject()
+fun NavigationManager(navigator: Navigator) {
     val backStack = navigator.backStack
 
     var showBottomBar by remember { mutableStateOf(false) }

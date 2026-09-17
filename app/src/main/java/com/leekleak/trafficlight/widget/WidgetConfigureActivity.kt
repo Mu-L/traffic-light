@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import com.leekleak.trafficlight.R
+import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.DataPlanDao
 import com.leekleak.trafficlight.database.DataPlanSnapshot
 import com.leekleak.trafficlight.model.NetworkUsageManager
@@ -37,9 +38,12 @@ import com.leekleak.trafficlight.widget.Widget.Companion.CARRIER_NAME
 import com.leekleak.trafficlight.widget.Widget.Companion.SIM_NUMBER
 import com.leekleak.trafficlight.widget.Widget.Companion.SUBSCRIBER_ID_HASH
 import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 import org.koin.compose.koinInject
 
 class WidgetConfigureActivity : ComponentActivity() {
+    private val appPreferenceRepo: AppPreferenceRepo by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -53,7 +57,7 @@ class WidgetConfigureActivity : ComponentActivity() {
         setResult(RESULT_CANCELED, resultValue)
 
         setContent {
-            AppTheme {
+            AppTheme(appPreferenceRepo) {
                 Scaffold { paddingValues ->
                     Content(appWidgetId, resultValue, paddingValues)
                 }

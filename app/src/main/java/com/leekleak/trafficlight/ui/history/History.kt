@@ -116,7 +116,6 @@ import com.leekleak.trafficlight.util.toDp
 import com.leekleak.trafficlight.util.toLocaleHourString
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 import java.time.LocalTime
 
 const val MAX_DAYS = 90
@@ -124,7 +123,7 @@ val imageWidth = 32.dp
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun History() {
+fun History(appManager: AppManager) {
     val viewModel: HistoryVM = koinViewModel()
     val haptic = LocalHapticFeedback.current
 
@@ -173,7 +172,7 @@ fun History() {
                     .padding(horizontal = 4.dp)
             ) {
                 var showFilter by remember { mutableStateOf(false) }
-                if (showFilter) HistoryFilter { showFilter = false }
+                if (showFilter) HistoryFilter(appManager) { showFilter = false }
                 val filtersChanged by viewModel.filtersChanged.collectAsStateWithLifecycle()
                 ButtonGroup(
                     modifier = Modifier.fillMaxWidth(),
@@ -370,7 +369,10 @@ private fun HistoryLegendItem(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryFilter(onDismiss: () -> Unit) {
+fun HistoryFilter(
+    appManager: AppManager,
+    onDismiss: () -> Unit
+) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     val viewModel: HistoryVM = koinViewModel()
@@ -399,14 +401,16 @@ fun HistoryFilter(onDismiss: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     HistoryItemSettings(
-                        stringResource(R.string.primary),
-                        1,
-                        usageQueries.first
+                        appManager = appManager,
+                        title = stringResource(R.string.primary),
+                        n = 1,
+                        query = usageQueries.first
                     )
                     HistoryItemSettings(
-                        stringResource(R.string.secondary),
-                        2,
-                        usageQueries.second
+                        appManager,
+                        title = stringResource(R.string.secondary),
+                        n = 2,
+                        query = usageQueries.second
                     )
                 }
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -501,6 +505,7 @@ fun HistoryFilter(onDismiss: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RowScope.HistoryItemSettings(
+    appManager: AppManager,
     title: String,
     n: Int,
     query: UsageQuery
@@ -508,7 +513,6 @@ fun RowScope.HistoryItemSettings(
     val hapticFeedback = LocalHapticFeedback.current
     val context = LocalContext.current
     val viewModel: HistoryVM = koinViewModel()
-    val appManager: AppManager = koinInject()
     val scope = rememberCoroutineScope()
 
     Column (modifier = Modifier.weight(1f)) {
@@ -557,6 +561,7 @@ fun RowScope.HistoryItemSettings(
 
         if (showAppPicker) {
             AppSearchDialog (
+                appManager,
                 onSelect = { uid ->
                     scope.launch {
                         viewModel.updateQuery(n, query.copy(dataUID = appManager.getAppForUID(uid)))
@@ -572,13 +577,16 @@ fun RowScope.HistoryItemSettings(
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-private fun AppSearchDialog(onSelect: (uid: Int) -> Unit, onDismiss: () -> Unit) {
+private fun AppSearchDialog(
+    appManager: AppManager,
+    onSelect: (uid: Int) -> Unit,
+    onDismiss: () -> Unit
+) {
     val sheetState = rememberBottomSheetState(SheetValue.Hidden)
     ModalBottomSheet (
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
-        val appManager: AppManager = koinInject()
         val textFieldState = rememberTextFieldState()
         val focusRequester = remember { FocusRequester() }
         val keyboardState by rememberUpdatedState(WindowInsets.isImeVisible)
@@ -708,7 +716,6 @@ fun AppItem(
     val haptic = LocalHapticFeedback.current
     val activity = LocalActivity.current
     val viewModel: HistoryVM = koinViewModel()
-    val appManager: AppManager = koinInject()
     val usageQueries by viewModel.queryFlow.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
@@ -769,9 +776,9 @@ fun AppItem(
                                 shape = MaterialTheme.shapes.large,
                                 onClick = {
                                     scope.launch {
-                                        app?.uid?.let {
-                                            viewModel.updateQuery(1, usageQueries.first.copy(dataUID = appManager.getAppForUID(it)))
-                                            viewModel.updateQuery(2, usageQueries.second.copy(dataUID = appManager.getAppForUID(it)))
+                                        app?.let {
+                                            viewModel.updateQuery(1, usageQueries.first.copy(dataUID = it))
+                                            viewModel.updateQuery(2, usageQueries.second.copy(dataUID = it))
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         }
                                     }
@@ -786,7 +793,6 @@ fun AppItem(
                                 }
                             }
                             if (app is DataUIDApp) {
-                                val app by produceState<DataUID>(allApp) { value = appManager.getAppForUID(app.uid) }
                                 val launchIntent by remember { derivedStateOf {
                                     activity?.packageManager?.getLaunchIntentForPackage(app.packageName)
                                 } }

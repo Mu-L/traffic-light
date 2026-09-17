@@ -47,10 +47,14 @@ import com.leekleak.trafficlight.util.openLink
 import com.leekleak.trafficlight.util.px
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 @Composable
-fun Settings(navigator: Navigator) {
+fun Settings(
+    navigator: Navigator,
+    appPreferenceRepo: AppPreferenceRepo,
+    permissionManager: PermissionManager,
+    shizukuServicesProvider: ShizukuServicesProvider,
+) {
     var showWarning by remember { mutableStateOf(false) }
     if (showWarning) {
         NotificationWarningDialog(onDismiss = { showWarning = false })
@@ -61,19 +65,27 @@ fun Settings(navigator: Navigator) {
         verticalArrangement = Arrangement.Top,
         backAction = BackAction.Normal(navigator),
     ) {
-        BackgroundPermissionPrompt()
-        NotificationSettings { showWarning = true }
-        if (BuildConfig.SHIZUKU) { ShizukuSettings() }
-        BasesSettings()
-        InterfaceSettings()
-        AboutSettings()
+        BackgroundPermissionPrompt(permissionManager)
+        NotificationSettings(
+            navigator = navigator,
+            permissionManager = permissionManager,
+            appPreferenceRepo = appPreferenceRepo,
+        ) { showWarning = true }
+        if (BuildConfig.SHIZUKU) {
+            ShizukuSettings(
+                appPreferenceRepo = appPreferenceRepo,
+                permissionManager = permissionManager,
+                shizukuServicesProvider = shizukuServicesProvider
+            )
+        }
+        BasesSettings(appPreferenceRepo)
+        InterfaceSettings(appPreferenceRepo)
+        AboutSettings(navigator, appPreferenceRepo)
     }
 }
 
 @Composable
-private fun AboutSettings() {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
-    val navigator: Navigator = koinInject()
+private fun AboutSettings(navigator: Navigator, appPreferenceRepo: AppPreferenceRepo) {
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
 
@@ -124,8 +136,7 @@ private fun AboutSettings() {
 }
 
 @Composable
-private fun InterfaceSettings() {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+private fun InterfaceSettings(appPreferenceRepo: AppPreferenceRepo) {
     val scope = rememberCoroutineScope()
 
     CategoryTitleSmallText(stringResource(R.string.ui))
@@ -159,8 +170,7 @@ private fun InterfaceSettings() {
 }
 
 @Composable
-private fun BasesSettings() {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+private fun BasesSettings(appPreferenceRepo: AppPreferenceRepo) {
     val scope = rememberCoroutineScope()
 
     CategoryTitleSmallText(stringResource(R.string.sizes))
@@ -191,10 +201,11 @@ private fun BasesSettings() {
 }
 
 @Composable
-private fun ShizukuSettings() {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
-    val permissionManager: PermissionManager = koinInject()
-    val shizukuServicesProvider: ShizukuServicesProvider = koinInject()
+private fun ShizukuSettings(
+    appPreferenceRepo: AppPreferenceRepo,
+    permissionManager: PermissionManager,
+    shizukuServicesProvider: ShizukuServicesProvider
+) {
     val scope = rememberCoroutineScope()
 
     CategoryTitleSmallText(stringResource(R.string.data_plans))
@@ -227,8 +238,7 @@ private fun ShizukuSettings() {
 }
 
 @Composable
-private fun BackgroundPermissionPrompt() {
-    val permissionManager: PermissionManager = koinInject()
+private fun BackgroundPermissionPrompt(permissionManager: PermissionManager) {
     val activity = LocalActivity.current
     val backgroundPermission by permissionManager.backgroundPermissionFlow.collectAsStateWithLifecycle()
     SlideAnimatedVisibility(!backgroundPermission) {
@@ -243,11 +253,13 @@ private fun BackgroundPermissionPrompt() {
 }
 
 @Composable
-private fun NotificationSettings(showWarning: () -> Unit) {
+private fun NotificationSettings(
+    navigator: Navigator,
+    permissionManager: PermissionManager,
+    appPreferenceRepo: AppPreferenceRepo,
+    showWarning: () -> Unit
+) {
     val viewModel = koinViewModel<SettingsVM>()
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
-    val permissionManager: PermissionManager = koinInject()
-    val navigator: Navigator = koinInject()
     val scope = rememberCoroutineScope()
 
     CategoryTitleSmallText(stringResource(R.string.notifications))

@@ -11,7 +11,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.database.AppPreferenceRepo
-import org.koin.compose.koinInject
 
 
 val LocalSizeMetric = compositionLocalOf { false }
@@ -20,9 +19,9 @@ val LocalBlurEnabled = compositionLocalOf { true }
 
 @Composable
 fun AppTheme(
+    appPreferenceRepo: AppPreferenceRepo,
     content: @Composable () -> Unit
 ) {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
     val theme by appPreferenceRepo.theme.collectAsState(Theme.AutoMaterial)
     val speedMetric by appPreferenceRepo.speedMetric.collectAsState(false)
     val sizeMetric by appPreferenceRepo.sizeMetric.collectAsState(false)

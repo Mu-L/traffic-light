@@ -67,10 +67,10 @@ val LocalNativeAdView = compositionLocalOf<NativeAdView?> { null }
 
 @Composable
 fun Ad(
+    appPreferenceRepo: AppPreferenceRepo
     adType: AdType,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
 ) {
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
     val adsEnabled by appPreferenceRepo.ads.collectAsState(false)
 
     if (!adsEnabled) return

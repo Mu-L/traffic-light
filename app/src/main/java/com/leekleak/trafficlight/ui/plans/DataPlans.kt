@@ -78,14 +78,15 @@ import com.leekleak.trafficlight.util.TrendCard
 import com.leekleak.trafficlight.util.openLink
 import com.leekleak.trafficlight.util.shelfShape
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 @Composable
-fun DataPlans() {
-    val viewModel: DataPlansVM = koinViewModel()
-    val navigator: Navigator = koinInject()
-
+fun DataPlans(
+    navigator: Navigator,
+    viewModel: DataPlansVM,
+    dataPlanDao: DataPlanDao,
+    appPreferenceRepo: AppPreferenceRepo,
+    networkUsageManager: NetworkUsageManager
+) {
     LifecycleResumeEffect(Unit) {
         viewModel.refresh()
         onPauseOrDispose {}
@@ -103,8 +104,14 @@ fun DataPlans() {
         val paddingBottom = paddingValues.calculateBottomPadding()
         val listContentPadding = PaddingValues(paddingSide, 0.dp, paddingSide, paddingBottom)
         Spacer(Modifier.height(paddingTop))
-        DataPlanPager(paddingSide + 8.dp, navigator)
-        DataPlanInsights(listContentPadding)
+        DataPlanPager(
+            paddingSide + 8.dp, navigator,
+            viewModel = viewModel,
+            dataPlanDao = dataPlanDao,
+            appPreferenceRepo = appPreferenceRepo,
+            networkUsageManager = networkUsageManager
+        )
+        DataPlanInsights(listContentPadding, viewModel, appPreferenceRepo)
     }
 }
 
@@ -112,12 +119,11 @@ fun DataPlans() {
 private fun DataPlanPager(
     horizontalPadding: Dp,
     navigator: Navigator,
+    viewModel: DataPlansVM,
+    dataPlanDao: DataPlanDao,
+    appPreferenceRepo: AppPreferenceRepo,
+    networkUsageManager: NetworkUsageManager
 ) {
-    val dataPlanDao: DataPlanDao = koinInject()
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
-    val viewModel: DataPlansVM = koinViewModel()
-    val networkUsageManager: NetworkUsageManager = koinInject()
-
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
 
@@ -211,9 +217,11 @@ private fun DataPlanPager(
 }
 
 @Composable
-private fun DataPlanInsights(contentPadding: PaddingValues) {
-    val viewModel: DataPlansVM = koinViewModel()
-    val appPreferenceRepo: AppPreferenceRepo = koinInject()
+private fun DataPlanInsights(
+    contentPadding: PaddingValues,
+    viewModel: DataPlansVM,
+    appPreferenceRepo: AppPreferenceRepo
+) {
     val planPair by viewModel.planFlow.collectAsState(null)
     val topAppsList by viewModel.topApps.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -253,11 +261,11 @@ private fun DataPlanInsights(contentPadding: PaddingValues) {
                     }
                 }
             }
-            if (plan.mainDataSize.byteValue > 0) usageInsights()
+            if (plan.mainDataSize.byteValue > 0) usageInsights(viewModel)
             extras(snapshot)
-            thisWeek()
+            thisWeek(viewModel)
             if (adsEnabled) item { Ad(AdType.NativeBanner, colorScheme.surface) }
-            if (plan.mainDataSize.byteValue > 0) budgetInsights()
+            if (plan.mainDataSize.byteValue > 0) budgetInsights(viewModel)
             topApps(topAppsList)
         }
     }
@@ -300,7 +308,7 @@ private fun LazyListScope.extras(snapshot: DataPlanSnapshot) {
     }
 }
 
-private fun LazyListScope.usageInsights() {
+private fun LazyListScope.usageInsights(viewModel: DataPlansVM) {
     item(key = "usage") {
         Column(Modifier.animateItem()) {
             CategoryTitleText(stringResource(R.string.usage))
@@ -308,7 +316,6 @@ private fun LazyListScope.usageInsights() {
                 modifier = Modifier.height(IntrinsicSize.Max),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val viewModel: DataPlansVM = koinViewModel()
                 val dataSafety by viewModel.dataSafety.collectAsStateWithLifecycle()
                 MiniCard(
                     state = dataSafety,
@@ -335,13 +342,12 @@ private fun LazyListScope.usageInsights() {
     }
 }
 
-private fun LazyListScope.budgetInsights() {
+private fun LazyListScope.budgetInsights(viewModel: DataPlansVM) {
     item(key = "budget") {
         Column(Modifier.animateItem()) {
             CategoryTitleText(stringResource(R.string.budget))
             val metric = LocalSizeMetric.current
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val viewModel: DataPlansVM = koinViewModel()
                 val todayBudget by viewModel.todayBudget.collectAsStateWithLifecycle()
                 val todayString by remember(todayBudget, metric) { derivedStateOf { DataSize(todayBudget).toStringParts(metric = metric) } }
                 MiniCard(
@@ -380,10 +386,9 @@ private fun LazyListScope.budgetInsights() {
     }
 }
 
-private fun LazyListScope.thisWeek() {
+private fun LazyListScope.thisWeek(viewModel: DataPlansVM) {
     item(key = "this_week") {
         Column(Modifier.animateItem()) {
-            val viewModel: DataPlansVM = koinViewModel()
             val weekUsage by viewModel.weekUsage.collectAsStateWithLifecycle()
             CategoryTitleText(stringResource(R.string.this_week))
             Box(

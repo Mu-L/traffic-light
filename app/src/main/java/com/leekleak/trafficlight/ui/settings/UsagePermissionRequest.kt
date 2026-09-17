@@ -33,14 +33,14 @@ import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.components.HazeScaffold
 import com.leekleak.trafficlight.ui.navigation.Navigator
 import com.leekleak.trafficlight.ui.navigation.OverviewKey
-import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun UsagePermissionRequest() {
+fun UsagePermissionRequest(
+    navigator: Navigator,
+    permissionManager: PermissionManager
+) {
     val activity = LocalActivity.current
-    val permissionManager: PermissionManager = koinInject()
-    val navigator: Navigator = koinInject()
     val usagePermission by permissionManager.usagePermissionFlow.collectAsStateWithLifecycle()
 
     LaunchedEffect(usagePermission) {

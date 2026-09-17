@@ -7,12 +7,14 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.leekleak.trafficlight.model.PermissionManager
 import com.leekleak.trafficlight.ui.navigation.NavigationManager
-import org.koin.compose.koinInject
+import com.leekleak.trafficlight.ui.navigation.Navigator
 
 @Composable
-fun App() {
+fun App(
+    navigator: Navigator,
+    permissionManager: PermissionManager
+) {
     val lifecycleOwner = LocalLifecycleOwner.current
-    val permissionManager: PermissionManager = koinInject()
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -23,5 +25,5 @@ fun App() {
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    NavigationManager()
+    NavigationManager(navigator)
 }
