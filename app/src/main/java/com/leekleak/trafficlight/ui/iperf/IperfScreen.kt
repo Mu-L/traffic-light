@@ -12,9 +12,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import com.leekleak.iperfintegration.IPerf3Provider
+import com.leekleak.iperfintegration.IperfCallback
 import com.leekleak.trafficlight.R
-import com.leekleak.trafficlight.integrations.IPerf3Provider
-import com.leekleak.trafficlight.integrations.IperfCallback
 import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.components.HazeScaffold
 import com.leekleak.trafficlight.ui.navigation.NAVBAR_PADDING
@@ -34,8 +34,8 @@ fun IperfScreen() {
         var output by remember { mutableStateOf("") }
         TextButton(onClick = {
             scope.launch {
-                IPerf3Provider.runIperfSuspend(
-                    arrayOf("-c", "160.242.19.254", "-p", "9205"),
+                IPerf3Provider.runTest(
+                    arrayOf("-c", "192.168.178.58", "-p", "5201"),
                     object : IperfCallback {
                         override fun onOutput(line: String) {
                             output += line
@@ -57,6 +57,13 @@ fun IperfScreen() {
             }
         }) {
             Text("Clock me")
+        }
+        TextButton(onClick = {
+
+            IPerf3Provider.stopTest()
+            Toast.makeText(context, "Stopped", Toast.LENGTH_SHORT).show()
+        }) {
+            Text("Cancel")
         }
         Text(text = output)
     }

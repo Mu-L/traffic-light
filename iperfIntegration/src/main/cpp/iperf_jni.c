@@ -9,6 +9,7 @@
 static JNIEnv *g_env;
 static jobject g_callback;
 static jmethodID g_method_output;
+static struct iperf_test *g_test;
 static void (*g_reporter_cb)(struct iperf_test *);
 static char *g_buf;
 static size_t g_bufsize, g_last_pos;
@@ -28,13 +29,12 @@ static void custom_reporter_callback(struct iperf_test *test) {
 
 
 JNIEXPORT void JNICALL
-Java_com_leekleak_trafficlight_integrations_IPerf3Provider_runIperf(
+Java_com_leekleak_iperfintegration_IPerf3Provider_runTestInternal(
     JNIEnv *env,
     jclass clazz,
     jobjectArray arguments,
     jobject callback
 ) {
-
     jclass objclass = (*env)->GetObjectClass(env, callback);
     jmethodID method_output = (*env)->GetMethodID(env, objclass, "onOutput", "(Ljava/lang/String;)V");
     jmethodID method_error = (*env)->GetMethodID(env, objclass, "onError", "(Ljava/lang/String;)V");
@@ -61,6 +61,8 @@ Java_com_leekleak_trafficlight_integrations_IPerf3Provider_runIperf(
     }
 
     struct iperf_test *test = iperf_new_test();
+    g_test = test;
+
     if (test == NULL) {
         jstring err = (*env)->NewStringUTF(env, "Failed to create test");
         (*env)->CallVoidMethod(env, callback, method_error, err);
@@ -100,4 +102,11 @@ cleanup:
     (*env)->DeleteGlobalRef(env, g_callback);
     g_callback = NULL;
     g_method_output = NULL;
+}
+
+JNIEXPORT void JNICALL
+Java_com_leekleak_iperfintegration_IPerf3Provider_stopTest(JNIEnv *env, jclass clazz) {
+    if (g_test) {
+        g_test->done = 1;
+    }
 }

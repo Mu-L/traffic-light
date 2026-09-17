@@ -24,3 +24,4 @@ rootProject.name = "Traffic Light"
 include(":app")
 include(":playIntegration")
 include(":shizukuIntegration")
+include(":iperfIntegration")

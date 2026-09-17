@@ -32,6 +32,7 @@ kotlinxCoroutinesTest = "1.11.0"
 turbine = "1.2.1"
 robolectric = "4.16.1"
 aboutLibraries = "15.2.0"
+leakcanary = "1.0.0"
 
 [libraries]
 
@@ -104,6 +105,7 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+leakcanary = { group = "com.android.tools.studio.leakcanary", name = "leakcanary", version.ref = "leakcanary" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
