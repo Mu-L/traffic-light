@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,7 +24,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun IperfScreen() {
+fun IperfScreen(
+    viewModel: IperfScreenVM
+) {
+    val ips by viewModel.ipFlow.collectAsState(initial = "")
+
     HazeScaffold(
         title = stringResource(R.string.today),
         backAction = BackAction.None,
@@ -59,12 +64,12 @@ fun IperfScreen() {
             Text("Clock me")
         }
         TextButton(onClick = {
-
             IPerf3Provider.stopTest()
             Toast.makeText(context, "Stopped", Toast.LENGTH_SHORT).show()
         }) {
             Text("Cancel")
         }
+        Text(text = ips)
         Text(text = output)
     }
 }

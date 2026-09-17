@@ -6,7 +6,6 @@ import android.net.Network
 import android.net.NetworkRequest
 import android.net.TrafficStats
 import android.os.Build
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,12 +20,11 @@ import java.util.concurrent.ConcurrentHashMap
 class TrafficSnapshotManager(
     private val appPreferenceRepo: AppPreferenceRepo,
     private val connectivityManager: ConnectivityManager,
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : AutoCloseable {
     @Volatile private var useFallback: Boolean = TrafficStats.getTotalTxBytes() == TrafficStats.UNSUPPORTED.toLong()
     private val activeInterfaceNames = ConcurrentHashMap<Network, String>()
     val interfaces: Set<String> get() = activeInterfaceNames.values.toSet()
-    private val scope: CoroutineScope = CoroutineScope(dispatcher + SupervisorJob())
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onLinkPropertiesChanged(

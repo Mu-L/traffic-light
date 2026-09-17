@@ -26,7 +26,7 @@ val navigationModule = module {
     navigation<OverviewKey> { Overview() }
     navigation<DataPlansKey> { DataPlans() }
     navigation<HistoryKey> { History() }
-    navigation<IperfScreenKey> { IperfScreen() }
+    navigation<IperfScreenKey> { IperfScreen(get()) }
     navigation<SettingsKey> { Settings(get()) }
     navigation<UsagePermissionRequestKey> { UsagePermissionRequest() }
     navigation<PlanConfigKey> { key -> DataPlanConfig(key.dataPlan)  }

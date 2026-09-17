@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Context.CONNECTIVITY_SERVICE
 import android.content.Context.NOTIFICATION_SERVICE
 import android.net.ConnectivityManager
+import android.net.wifi.WifiManager
+import androidx.core.content.getSystemService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,6 +21,10 @@ val systemServiceModule = module {
 
     single<ConnectivityManager> {
         androidContext().getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+    }
+
+    single<WifiManager> {
+        androidContext().getSystemService<WifiManager>() as WifiManager
     }
 
     single<NotificationManager> {
