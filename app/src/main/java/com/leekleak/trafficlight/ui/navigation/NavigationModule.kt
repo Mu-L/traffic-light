@@ -2,6 +2,7 @@ package com.leekleak.trafficlight.ui.navigation
 
 import com.leekleak.trafficlight.model.PermissionManager
 import com.leekleak.trafficlight.ui.history.History
+import com.leekleak.trafficlight.ui.iperf.IperfScreen
 import com.leekleak.trafficlight.ui.overview.Overview
 import com.leekleak.trafficlight.ui.plans.DataPlanConfig
 import com.leekleak.trafficlight.ui.plans.DataPlans
@@ -25,6 +26,7 @@ val navigationModule = module {
     navigation<OverviewKey> { Overview() }
     navigation<DataPlansKey> { DataPlans() }
     navigation<HistoryKey> { History() }
+    navigation<IperfScreenKey> { IperfScreen() }
     navigation<SettingsKey> { Settings(get()) }
     navigation<UsagePermissionRequestKey> { UsagePermissionRequest() }
     navigation<PlanConfigKey> { key -> DataPlanConfig(key.dataPlan)  }

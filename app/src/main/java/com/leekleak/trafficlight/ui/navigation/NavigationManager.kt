@@ -97,6 +97,7 @@ fun NavigationManager() {
                             NavigationButton(navigator, OverviewKey, stringResource(R.string.overview), R.drawable.overview)
                             NavigationButton(navigator, DataPlansKey, stringResource(R.string.plans), R.drawable.sim_card)
                             NavigationButton(navigator, HistoryKey, stringResource(R.string.history), R.drawable.history)
+                            NavigationButton(navigator, IperfScreenKey, stringResource(R.string.speed_test), R.drawable.speed)
                         },
                     )
                 }
@@ -153,6 +154,7 @@ fun NavigationButton(navigator: Navigator, route: NavKey, name: String, icon: In
             AnimatedVisibility(navigator.current == route) {
                 Text(
                     modifier = Modifier.padding(start = 4.dp),
+                    maxLines = 1,
                     text = name
                 )
             }

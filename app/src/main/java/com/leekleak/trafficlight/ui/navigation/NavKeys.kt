@@ -16,6 +16,9 @@ data object DataPlansKey : NavKey
 
 @Serializable
 data object HistoryKey : NavKey
+@Serializable
+data object IperfScreenKey : NavKey
+
 
 @Serializable
 data object SettingsKey : NavKey
@@ -23,7 +26,7 @@ data object SettingsKey : NavKey
 @Serializable
 data object UsagePermissionRequestKey : NavKey
 
-val mainScreens = listOf(OverviewKey, DataPlansKey, HistoryKey)
+val mainScreens = listOf(OverviewKey, DataPlansKey, HistoryKey, IperfScreenKey)
 
 @Serializable
 data class PlanConfigKey(val dataPlan: DataPlan) : NavKey
