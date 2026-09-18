@@ -43,9 +43,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.leekleak.trafficlight.R
 import org.koin.compose.navigation3.koinEntryProvider
@@ -109,10 +107,11 @@ fun NavigationManager(navigator: Navigator) {
             onBack = { navigator.goBack() },
             entryProvider = entryProvider,
             entryDecorators = listOf(
-                // Saves Compose state per entry
-                rememberSaveableStateHolderNavEntryDecorator(),
-                // Scopes ViewModel per entry
-                rememberViewModelStoreNavEntryDecorator()
+                // scoping viewmodels per entry.
+                // currently disabling as our vms currently hold quite a lot of expensive data
+                // so clearing them is expensive, but this should be reconsidered in the future.
+                
+                // rememberViewModelStoreNavEntryDecorator()
             ),
             transitionSpec = {
                 if (backStack.size == 1) fadeIn(tween()) togetherWith fadeOut(tween())

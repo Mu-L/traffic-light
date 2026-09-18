@@ -29,12 +29,10 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,23 +48,18 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.AppGraph
 import com.leekleak.trafficlight.charts.BarGraph
 import com.leekleak.trafficlight.charts.ExtraGraph
-import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.AppUsage
-import com.leekleak.trafficlight.database.DataPlanDao
+import com.leekleak.trafficlight.database.DataPlan
 import com.leekleak.trafficlight.database.DataPlanSnapshot
 import com.leekleak.trafficlight.integrations.Ad
 import com.leekleak.trafficlight.integrations.AdType
-import com.leekleak.trafficlight.model.NetworkUsageManager
 import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.components.HazeScaffold
 import com.leekleak.trafficlight.ui.navigation.NAVBAR_PADDING
-import com.leekleak.trafficlight.ui.navigation.Navigator
-import com.leekleak.trafficlight.ui.navigation.PlanConfigKey
 import com.leekleak.trafficlight.ui.settings.InfoCard
 import com.leekleak.trafficlight.ui.theme.LocalSizeMetric
 import com.leekleak.trafficlight.ui.theme.card
@@ -77,18 +70,18 @@ import com.leekleak.trafficlight.util.MiniCardState
 import com.leekleak.trafficlight.util.TrendCard
 import com.leekleak.trafficlight.util.openLink
 import com.leekleak.trafficlight.util.shelfShape
-import kotlinx.coroutines.launch
 
 @Composable
 fun DataPlans(
-    navigator: Navigator,
-    viewModel: DataPlansVM,
-    dataPlanDao: DataPlanDao,
-    appPreferenceRepo: AppPreferenceRepo,
-    networkUsageManager: NetworkUsageManager
+    uiState: DataPlansUiState,
+    selectDataPlan: (DataPlan?) -> Unit,
+    getPlanSnapshot: suspend (DataPlan) -> DataPlanSnapshot,
+    disableShizukuHint: () -> Unit,
+    goToPlanConfig: (DataPlan) -> Unit,
+    refresh: () -> Unit,
 ) {
     LifecycleResumeEffect(Unit) {
-        viewModel.refresh()
+        refresh()
         onPauseOrDispose {}
     }
 
@@ -105,38 +98,36 @@ fun DataPlans(
         val listContentPadding = PaddingValues(paddingSide, 0.dp, paddingSide, paddingBottom)
         Spacer(Modifier.height(paddingTop))
         DataPlanPager(
-            paddingSide + 8.dp, navigator,
-            viewModel = viewModel,
-            dataPlanDao = dataPlanDao,
-            appPreferenceRepo = appPreferenceRepo,
-            networkUsageManager = networkUsageManager
+            horizontalPadding = paddingSide + 8.dp,
+            uiState = uiState,
+            selectDataPlan = selectDataPlan,
+            getPlanSnapshot = getPlanSnapshot,
+            disableShizukuHint = disableShizukuHint,
+            goToPlanConfig = goToPlanConfig
         )
-        DataPlanInsights(listContentPadding, viewModel)
+        DataPlanInsights(listContentPadding, uiState)
     }
 }
 
 @Composable
 private fun DataPlanPager(
     horizontalPadding: Dp,
-    navigator: Navigator,
-    viewModel: DataPlansVM,
-    dataPlanDao: DataPlanDao,
-    appPreferenceRepo: AppPreferenceRepo,
-    networkUsageManager: NetworkUsageManager
+    uiState: DataPlansUiState,
+    selectDataPlan: (DataPlan?) -> Unit,
+    getPlanSnapshot: suspend (DataPlan) -> DataPlanSnapshot,
+    disableShizukuHint: () -> Unit,
+    goToPlanConfig: (DataPlan) -> Unit,
 ) {
     val activity = LocalActivity.current
-    val scope = rememberCoroutineScope()
 
-    val activePlans by remember { dataPlanDao.getActivePlansFlow() }.collectAsState(listOf())
-    val shizukuHint by remember { appPreferenceRepo.shizukuHint }.collectAsState(false)
-    val shizukuTracking by remember { appPreferenceRepo.shizukuTracking }.collectAsState(true)
+    val activePlans = uiState.activePlans
 
     val pagerState = rememberPagerState(pageCount = {
-        activePlans.size + if (shizukuHint && !shizukuTracking) 1 else 0
+        activePlans.size + if (uiState.shizukuHint && !uiState.shizukuTracking) 1 else 0
     })
 
     LaunchedEffect(activePlans.size, pagerState.currentPage) {
-        viewModel.selectDataPlan(
+        selectDataPlan(
             if (pagerState.currentPage < activePlans.size) {
                 activePlans[pagerState.currentPage]
             } else {
@@ -146,8 +137,9 @@ private fun DataPlanPager(
     }
 
     HorizontalPager(
+        modifier = Modifier.height(220.dp),
         state = pagerState,
-        contentPadding = PaddingValues(vertical = 8.dp, horizontal = horizontalPadding),
+        contentPadding = PaddingValues(horizontal = horizontalPadding),
         pageSpacing = horizontalPadding / 2,
         snapPosition = SnapPosition.Center,
         pageSize = PageSize.Fill
@@ -155,16 +147,12 @@ private fun DataPlanPager(
         if (page < activePlans.size) {
             val plan = activePlans[page]
             val planSnapshot by produceState(DataPlanSnapshot(0, plan.mainDataSizeUnit, emptyList())) { 
-                value = plan.getUsageSnapshot(networkUsageManager) 
+                value = getPlanSnapshot(plan)
             }
             if (plan.configured) {
-                ConfiguredDataPlan(plan, planSnapshot) {
-                    navigator.goTo(PlanConfigKey(plan))
-                }
+                ConfiguredDataPlan(plan, planSnapshot) { goToPlanConfig(plan) }
             } else {
-                UnconfiguredDataPlan(plan, planSnapshot) {
-                    navigator.goTo(PlanConfigKey(plan))
-                }
+                UnconfiguredDataPlan(plan, planSnapshot) { goToPlanConfig(plan) }
             }
         } else {
             Column(
@@ -203,7 +191,7 @@ private fun DataPlanPager(
                         }
                     }
                     Button(
-                        onClick = { scope.launch { appPreferenceRepo.setShizukuHint(false) } }
+                        onClick = disableShizukuHint
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(painterResource(R.drawable.close), null)
@@ -219,12 +207,9 @@ private fun DataPlanPager(
 @Composable
 private fun DataPlanInsights(
     contentPadding: PaddingValues,
-    viewModel: DataPlansVM,
+    uiState: DataPlansUiState
 ) {
-    val planPair by viewModel.planFlow.collectAsState(null)
-    val topAppsList by viewModel.topApps.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
-    val adsEnabled by viewModel.adsEnabled.collectAsState(false)
 
     LazyColumn(
         modifier = Modifier
@@ -237,7 +222,9 @@ private fun DataPlanInsights(
         state = listState
     ) {
         item{}
-        if (planPair != null && (planPair?.first?.mainDataSize?.byteValue ?: 0) == 0L ) {
+        val plan = uiState.plan
+        val snapshot = uiState.snapshot
+        if (plan != null && plan.mainDataSize.byteValue == 0L) {
             item {
                 InfoCard(
                     title = stringResource(R.string.hint),
@@ -247,7 +234,7 @@ private fun DataPlanInsights(
                 )
             }
         }
-        planPair?.let { (plan, snapshot) ->
+        if (plan != null && snapshot != null) {
             if (plan.note.isNotEmpty()) {
                 item(key = "note") {
                     Box(Modifier.animateItem()) {
@@ -260,12 +247,12 @@ private fun DataPlanInsights(
                     }
                 }
             }
-            if (plan.mainDataSize.byteValue > 0) usageInsights(viewModel)
+            if (plan.mainDataSize.byteValue > 0) usageInsights(uiState)
             extras(snapshot)
-            thisWeek(viewModel)
-            if (adsEnabled) item { Ad(true, AdType.NativeBanner, colorScheme.surface) }
-            if (plan.mainDataSize.byteValue > 0) budgetInsights(viewModel)
-            topApps(topAppsList)
+            thisWeek(uiState)
+            if (uiState.adsEnabled) item { Ad(true, AdType.NativeBanner, colorScheme.surface) }
+            if (plan.mainDataSize.byteValue > 0) budgetInsights(uiState)
+            topApps(uiState.topApps)
         }
     }
 }
@@ -307,7 +294,7 @@ private fun LazyListScope.extras(snapshot: DataPlanSnapshot) {
     }
 }
 
-private fun LazyListScope.usageInsights(viewModel: DataPlansVM) {
+private fun LazyListScope.usageInsights(uiState: DataPlansUiState) {
     item(key = "usage") {
         Column(Modifier.animateItem()) {
             CategoryTitleText(stringResource(R.string.usage))
@@ -315,7 +302,7 @@ private fun LazyListScope.usageInsights(viewModel: DataPlansVM) {
                 modifier = Modifier.height(IntrinsicSize.Max),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val dataSafety by viewModel.dataSafety.collectAsStateWithLifecycle()
+                val dataSafety = uiState.dataSafety
                 MiniCard(
                     state = dataSafety,
                     baseColor = colorScheme.surface,
@@ -331,9 +318,8 @@ private fun LazyListScope.usageInsights(viewModel: DataPlansVM) {
                     )
                 )
 
-                val trend by viewModel.trend.collectAsStateWithLifecycle()
                 TrendCard(
-                    trend = trend,
+                    trend = uiState.trend,
                     baseColor = colorScheme.surface
                 )
             }
@@ -341,14 +327,16 @@ private fun LazyListScope.usageInsights(viewModel: DataPlansVM) {
     }
 }
 
-private fun LazyListScope.budgetInsights(viewModel: DataPlansVM) {
+private fun LazyListScope.budgetInsights(uiState: DataPlansUiState) {
     item(key = "budget") {
         Column(Modifier.animateItem()) {
             CategoryTitleText(stringResource(R.string.budget))
             val metric = LocalSizeMetric.current
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val todayBudget by viewModel.todayBudget.collectAsStateWithLifecycle()
-                val todayString by remember(todayBudget, metric) { derivedStateOf { DataSize(todayBudget).toStringParts(metric = metric) } }
+                val todayBudget = uiState.todayBudget
+                val todayString by remember(todayBudget, metric) { derivedStateOf {
+                    DataSize(todayBudget).toStringParts(metric = metric)
+                } }
                 MiniCard(
                     state = MiniCardState.NEUTRAL,
                     baseColor = colorScheme.surface,
@@ -364,8 +352,10 @@ private fun LazyListScope.budgetInsights(viewModel: DataPlansVM) {
                     }
                 )
 
-                val remainingDailyBudget by viewModel.remainingDailyBudget.collectAsStateWithLifecycle()
-                val remainingString by remember(remainingDailyBudget, metric) { derivedStateOf { DataSize(remainingDailyBudget).toStringParts(metric = metric) } }
+                val remainingDailyBudget = uiState.remainingDailyBudget
+                val remainingString by remember(remainingDailyBudget, metric) { derivedStateOf {
+                    DataSize(remainingDailyBudget).toStringParts(metric = metric)
+                } }
                 MiniCard(
                     state = MiniCardState.NEUTRAL,
                     baseColor = colorScheme.surface,
@@ -385,10 +375,9 @@ private fun LazyListScope.budgetInsights(viewModel: DataPlansVM) {
     }
 }
 
-private fun LazyListScope.thisWeek(viewModel: DataPlansVM) {
+private fun LazyListScope.thisWeek(uiState: DataPlansUiState) {
     item(key = "this_week") {
         Column(Modifier.animateItem()) {
-            val weekUsage by viewModel.weekUsage.collectAsStateWithLifecycle()
             CategoryTitleText(stringResource(R.string.this_week))
             Box(
                 modifier = Modifier
@@ -396,7 +385,7 @@ private fun LazyListScope.thisWeek(viewModel: DataPlansVM) {
                     .background(colorScheme.surface)
                     .padding(6.dp)
             ) {
-                BarGraph(weekUsage)
+                BarGraph(uiState.weekUsage)
             }
         }
     }

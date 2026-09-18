@@ -71,7 +71,7 @@ class WidgetConfigureActivity : ComponentActivity() {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
 
-        val activePlans by remember { dataPlanDao.getActivePlansFlow() }.collectAsState(listOf())
+        val activePlans by remember { dataPlanDao.activePlansFlow }.collectAsState(listOf())
 
         LazyColumn (
             modifier = Modifier.padding(horizontal = 16.dp),

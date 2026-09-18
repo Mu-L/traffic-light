@@ -43,8 +43,8 @@ interface DataPlanDao {
     @Query("SELECT * FROM dataplan WHERE hashedSubscriberID = :hashedID")
     suspend fun getByHash(hashedID: String): DataPlan?
 
-    @Query("SELECT * FROM dataplan WHERE simIndex != -1 ORDER BY simIndex ASC")
-    fun getActivePlansFlow(): Flow<List<DataPlan>>
+    @get:Query("SELECT * FROM dataplan WHERE simIndex != -1 ORDER BY simIndex ASC")
+    val activePlansFlow: Flow<List<DataPlan>>
 
     @Query("SELECT * FROM dataplan WHERE simIndex != -1 ORDER BY simIndex ASC")
     suspend fun getActivePlans(): List<DataPlan>
