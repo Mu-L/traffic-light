@@ -1,15 +1,9 @@
 package com.leekleak.trafficlight.integrations
 
-import android.app.Activity
+import org.koin.dsl.bind
 import org.koin.dsl.module
+import org.koin.plugin.module.dsl.single
 
 val integrationsModule = module {
-    single<PlayServicesProvider> {
-        object : PlayServicesProvider {
-            override suspend fun onAppLaunch(activity: Activity) = Unit
-        }
-    }
-    single<ShizukuServicesProvider> {
-        ShizukuServicesProviderImpl(get(), get(), get(), get())
-    }
+    single<ShizukuServicesProviderImpl>() bind ShizukuServicesProvider::class
 }

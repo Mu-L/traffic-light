@@ -24,7 +24,6 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.core)
-    implementation(libs.koin.android)
     implementation(libs.ads.mobile.sdk)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

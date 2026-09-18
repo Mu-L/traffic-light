@@ -26,13 +26,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
+import org.koin.java.KoinJavaComponent.injectOrNull
 import kotlin.time.Duration.Companion.seconds
 
 class MainActivity : ComponentActivity() {
 
     private val appPreferenceRepo: AppPreferenceRepo by inject()
     private val dataPlanDao: DataPlanDao by inject()
-    private val playServicesProvider: PlayServicesProvider by inject()
+    private val playServicesProvider: PlayServicesProvider? by injectOrNull(PlayServicesProvider::class.java)
     private val imageLoader: ImageLoader by inject()
     private val navigator: Navigator by inject()
     private val permissionManager: PermissionManager by inject()
@@ -59,7 +60,7 @@ class MainActivity : ComponentActivity() {
         }
 
         lifecycleScope.launch {
-            playServicesProvider.onAppLaunch(this@MainActivity)
+            playServicesProvider?.onAppLaunch(this@MainActivity)
         }
 
         setContent {

@@ -43,7 +43,9 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.leekleak.trafficlight.R
 import org.koin.compose.navigation3.koinEntryProvider
@@ -106,6 +108,12 @@ fun NavigationManager(navigator: Navigator) {
             backStack = navigator.backStack,
             onBack = { navigator.goBack() },
             entryProvider = entryProvider,
+            entryDecorators = listOf(
+                // Saves Compose state per entry
+                rememberSaveableStateHolderNavEntryDecorator(),
+                // Scopes ViewModel per entry
+                rememberViewModelStoreNavEntryDecorator()
+            ),
             transitionSpec = {
                 if (backStack.size == 1) fadeIn(tween()) togetherWith fadeOut(tween())
                 else {
