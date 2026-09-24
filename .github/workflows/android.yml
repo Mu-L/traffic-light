@@ -1,20 +1,15 @@
-name: "CodeQL"
+name: Android CI
+permissions:
+  contents: read
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch:
-
-permissions:
-  actions: read
-  contents: read
-  security-events: write
 
 jobs:
-  analyze:
-    name: Analyze (${{ matrix.language }})
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -43,13 +38,7 @@ jobs:
           packages: "platform-tools platforms;android-35 build-tools;35.0.0 ndk;30.0.16248370"
           accept-android-sdk-licenses: true
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
-
-      - name: Build project for CodeQL
+      - name: Build project
         shell: bash
         run: |
           unset HTTP_PROXY HTTPS_PROXY ALL_PROXY
@@ -57,7 +46,8 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug --stacktrace
 
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
+      - name: Upload APK Debug
+        uses: actions/upload-artifact@v7
         with:
-          category: "/language:${{ matrix.language }}"
+            name: trafficlight-debug
+            path: app/build/outputs/apk/**/debug/*.apk
