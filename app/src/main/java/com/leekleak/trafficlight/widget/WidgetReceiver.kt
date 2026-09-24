@@ -1,40 +1,39 @@
 package com.leekleak.trafficlight.widget
 
-import android.annotation.SuppressLint
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.ACTION_SCREEN_OFF
 import android.content.Intent.ACTION_SCREEN_ON
 import android.content.IntentFilter
+import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.state.getAppWidgetState
+import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
+import com.leekleak.trafficlight.widget.Widget.Companion.FORCE_REFRESH
 import com.leekleak.trafficlight.widget.Widget.Companion.SUBSCRIBER_ID_HASH
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.coroutines.CoroutineContext
 
-@OptIn(ExperimentalAtomicApi::class)
-class WidgetReceiver: GlanceAppWidgetReceiver(), KoinComponent {
-    private val applicationScope: CoroutineScope by inject()
-    override val glanceAppWidget: GlanceAppWidget = Widget()
+@OptIn(ExperimentalAtomicApi::class, ExperimentalGlanceApi::class)
+class WidgetReceiver: GlanceAppWidgetReceiver() {
+    override val coroutineContext: CoroutineContext get() = Dispatchers.IO
+    override val glanceAppWidget: GlanceAppWidget get() = Widget()
 
-    @SuppressLint("MissingSuperCall")
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        val pendingResult = goAsync()
-        registerReceiver(context)
 
+        registerReceiver(context)
         /**
          * Unfortunately Glance widgets have a really stupid rate limit which stops the app from updating
          * the widget more than once every ~1min.
@@ -46,27 +45,20 @@ class WidgetReceiver: GlanceAppWidgetReceiver(), KoinComponent {
          * actually done the update fails!
          *
          * Very stupid, but if you just ignore and don't update widgets with no subscriberId, it works fine.
+         *
+         * For the record, seems like a system bug (from 2012!!!):
+         *
+         * https://stackoverflow.com/a/12236443
          */
 
-        applicationScope.launch {
-            for (appWidgetId in appWidgetIds) {
-                try {
-                    val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
-                    val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
+        val newAppWidgetIds = appWidgetIds.filter { id ->
+            val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(id)
+            val prefs = runBlocking { getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) }
 
-                    if (prefs[SUBSCRIBER_ID_HASH] != null) {
-                        glanceAppWidget.update(context, glanceId)
-                    }
-                } catch (e: IllegalArgumentException) {
-                    Timber.e(e, "Failed to update widget: invalid ID or mismatch")
-                } catch (e: IllegalStateException) {
-                    Timber.e(e, "Failed to update widget: invalid state")
-                } catch (e: java.io.IOException) {
-                    Timber.e(e, "Failed to update widget: IO error")
-                }
-            }
-            pendingResult.finish()
-        }
+            prefs[SUBSCRIBER_ID_HASH] != null
+        }.toIntArray()
+
+        super.onUpdate(context, appWidgetManager, newAppWidgetIds)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -89,11 +81,12 @@ class WidgetReceiver: GlanceAppWidgetReceiver(), KoinComponent {
     }
 
     fun registerReceiver(context: Context) {
-        if (registered.exchange(true)) return
+        if (registered.load()) return
         context.applicationContext.registerReceiver(this, IntentFilter().apply {
             addAction(ACTION_SCREEN_ON)
             addAction(ACTION_SCREEN_OFF)
         })
+        registered.store(true)
     }
 
     fun unregisterReceiver(context: Context) {
@@ -108,5 +101,15 @@ class WidgetReceiver: GlanceAppWidgetReceiver(), KoinComponent {
 
     companion object {
         private var registered = AtomicBoolean(false)
+
+        suspend fun setForceUpdateWidgets(context: Context) {
+            val glanceManager = GlanceAppWidgetManager(context)
+            val ids = glanceManager.getGlanceIds(Widget::class.java)
+            for (id in ids) {
+                updateAppWidgetState(context, id) { prefs ->
+                    prefs[FORCE_REFRESH] = true
+                }
+            }
+        }
     }
 }

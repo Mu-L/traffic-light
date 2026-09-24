@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             dataPlanDao.getActivePlansWithNotificationsFlow().combine(appPreferenceRepo.notification) { _, _ ->
             }.collectLatest {
-                NotificationService.startService(applicationContext, this)
+                NotificationService.startService(applicationContext)
             }
         }
 

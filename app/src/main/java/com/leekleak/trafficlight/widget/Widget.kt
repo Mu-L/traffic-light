@@ -79,7 +79,11 @@ class Widget: GlanceAppWidget() {
 
         val dataPlan = withContext(Dispatchers.IO) {
             state[SUBSCRIBER_ID_HASH]?.let { dataPlanDao.getByHash(it) }
-        }?: return
+        }
+        if (dataPlan == null){
+            Timber.i("Data plan is null in widget")
+            return
+        }
 
         val dataPlanSnapshot = dataPlan.getUsageSnapshot(networkUsageManager)
 
@@ -119,7 +123,10 @@ class Widget: GlanceAppWidget() {
             }
         }
 
-        if (!stateChanged) return
+        if (!stateChanged) {
+            Timber.i("Skipping widget update as state hasn't changed")
+            return
+        }
 
         Timber.i("Updating widget")
         provideContent {

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.leekleak.trafficlight.model.PermissionManager
 import com.leekleak.trafficlight.services.notifications.NotificationService
+import com.leekleak.trafficlight.widget.WidgetReceiver.Companion.setForceUpdateWidgets
 import com.leekleak.trafficlight.widget.startAlarmManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -22,15 +23,24 @@ class AutoStarter : BroadcastReceiver(), KoinComponent {
             applicationScope.launch {
                 try {
                     permissionManager.update()
-                    NotificationService.startService(context, this)
-                    startAlarmManager(context)
-                } catch (e: SecurityException) {
-                    Timber.e(e, "Failed to start service or alarm")
-                } catch (e: IllegalStateException) {
-                    Timber.e(e, "Background execution limits prevented service start")
-                } finally {
-                    pendingResult.finish()
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to update permissions")
                 }
+
+                try {
+                    NotificationService.startService(context)
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to start notification service")
+                }
+
+                try {
+                    setForceUpdateWidgets(context)
+                    startAlarmManager(context)
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to start alarm manager service")
+                }
+
+                pendingResult.finish()
             }
         }
     }

@@ -8,7 +8,6 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.DataPlanDao
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.get
 import org.koin.android.ext.android.inject
@@ -123,15 +122,13 @@ class NotificationService : LifecycleService() {
     }
 
     companion object {
-        fun startService(context: Context, scope: CoroutineScope) {
-            scope.launch {
-                try {
-                    context.startService(Intent(context, NotificationService::class.java))
-                } catch (e: SecurityException) {
-                    Timber.e(e, "Failed to start NotificationService due to permissions")
-                } catch (e: IllegalStateException) {
-                    Timber.e(e, "Failed to start NotificationService due to background limits")
-                }
+        fun startService(context: Context) {
+            try {
+                context.startService(Intent(context, NotificationService::class.java))
+            } catch (e: SecurityException) {
+                Timber.e(e, "Failed to start NotificationService due to permissions")
+            } catch (e: IllegalStateException) {
+                Timber.e(e, "Failed to start NotificationService due to background limits")
             }
         }
     }
