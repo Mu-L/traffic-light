@@ -193,14 +193,13 @@ class SpeedNotification(
                             )
                         }
                     )
+                    .setShowWhen(false)
                 }
                 else  {
                     setSmallIcon(R.drawable.mobiledata_arrows)
                     setShortCriticalText(data)
                 }
             }
-            .setWhen(Long.MAX_VALUE) // Keep above other notifications
-            .setShowWhen(false) // Hide timestamp
             .setContentTitle(title)
             .setContentText(messageShort)
             .build()

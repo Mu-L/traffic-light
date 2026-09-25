@@ -73,8 +73,7 @@ class PlanNotification(
             .apply {
                 if (!dataPlan.liveNotification) {
                     setSmallIcon(notificationIconHelper.createIcon(speed, unit))
-                    setWhen(Long.MAX_VALUE) // Keep above other notifications
-                    setShowWhen(false) // Hide timestamp
+                    setShowWhen(false)
                 }
                 else  {
                     setSmallIcon(simIconRes(dataPlan.simIndex))
