@@ -162,7 +162,6 @@
     <string name="selected">Selected</string>
     <string name="blur_effects">Blur effects</string>
     <string name="set_as_default">Set as default</string>
-    <string name="speed_test">Speed Test</string>
     <string name="search">Search</string>
     <string name="server_ip_address">IP address</string>
     <string name="no_server_selected">No server selected</string>
@@ -179,6 +178,8 @@
     <string name="remove_server">Remove server</string>
     <string name="remove_server_question">Are you sure you want to remove this server?</string>
     <string name="remove">Remove</string>
+    <string name="client">Client</string>
+    <string name="server">Server</string>
     <plurals name="resets_in_days">
         <item quantity="one">Resets tomorrow</item>
         <item quantity="other">Resets in %d days</item>

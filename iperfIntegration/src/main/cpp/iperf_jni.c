@@ -105,7 +105,7 @@ cleanup:
 }
 
 JNIEXPORT void JNICALL
-Java_com_leekleak_iperfintegration_IPerf3Provider_stopTest(JNIEnv *env, jclass clazz) {
+Java_com_leekleak_iperfintegration_IPerf3Provider_stopTestInternal(JNIEnv *env, jclass clazz) {
     if (g_test) {
         g_test->done = 1;
     }

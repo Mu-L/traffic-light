@@ -41,18 +41,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TooltipAnchorPosition
@@ -287,13 +288,16 @@ fun SearchField(
             )
         )
         SlideAnimatedVisibility(isError != null) {
-            Box(
+            Row (
                 modifier = Modifier
                     .padding(top = 4.dp)
                     .fillMaxWidth()
                     .card(colorScheme.errorContainer)
-                    .padding(8.dp)
+                    .padding(vertical = 8.dp, horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Icon(painterResource(R.drawable.warning), null, tint = colorScheme.error)
                 Text(text = isError ?: "", color = colorScheme.error)
             }
         }
@@ -304,6 +308,7 @@ fun SearchField(
 fun ButtonGroupScope.iconToggleButton(
     text: String? = null,
     showBadge: Boolean = false,
+    fillWidth: Boolean = false,
     selected: Boolean,
     onSelect: () -> Unit,
     toggledColors: IconButtonColors? = null,
@@ -323,9 +328,11 @@ fun ButtonGroupScope.iconToggleButton(
                 if (selected) toggledColors?.contentColor ?: colorScheme.onPrimaryContainer
                 else colorScheme.onSurfaceVariant
             )
-            IconButton(
-                modifier = Modifier.animateWidth(source),
-                colors = IconButtonDefaults.iconButtonColors(
+            TextButton(
+                modifier = Modifier.let {
+                    if (fillWidth) { it.weight(1f) } else it
+                }.animateWidth(source),
+                colors = ButtonDefaults.buttonColors(
                     containerColor = containerColor,
                     contentColor = contentColor
                 ),
