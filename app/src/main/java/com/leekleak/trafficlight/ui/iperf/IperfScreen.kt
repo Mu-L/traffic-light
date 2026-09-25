@@ -205,6 +205,7 @@ private fun ClientScreen(
                     scope.launch {
                         if (selectedEntry == null) return@launch
                         IPerf3Provider.runTest(
+                            //arrayOf("-s"),
                             arrayOf("-c", selectedEntry.ip, "-p", selectedEntry.port),
                             object : IperfCallback {
                                 override fun onOutput(line: String) {
@@ -242,7 +243,7 @@ private fun ClientScreen(
                 }
             }
         }
-        
+
         Text(text = output)
     }
 }

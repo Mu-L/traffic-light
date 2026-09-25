@@ -9,10 +9,21 @@
 static JNIEnv *g_env;
 static jobject g_callback;
 static jmethodID g_method_output;
-static struct iperf_test *g_test;
 static void (*g_reporter_cb)(struct iperf_test *);
 static char *g_buf;
 static size_t g_bufsize, g_last_pos;
+
+static struct iperf_test *g_test;
+static pthread_t g_test_thread;
+static jmp_buf g_sigend_jmp;
+static volatile sig_atomic_t g_jmp_valid = 0;
+static volatile sig_atomic_t g_was_cancelled = 0;
+
+static void sigend_handler(int sig) {
+    if (g_jmp_valid) {
+        longjmp(g_sigend_jmp, 1);
+    }
+}
 
 static void custom_reporter_callback(struct iperf_test *test) {
     if (g_reporter_cb) {
@@ -27,6 +38,11 @@ static void custom_reporter_callback(struct iperf_test *test) {
     }
 }
 
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    iperf_catch_sigend(sigend_handler);
+    return JNI_VERSION_1_6;
+}
 
 JNIEXPORT void JNICALL
 Java_com_leekleak_iperfintegration_IPerf3Provider_runTestInternal(
@@ -51,11 +67,16 @@ Java_com_leekleak_iperfintegration_IPerf3Provider_runTestInternal(
     g_bufsize = 0;
     g_buf = NULL;
 
+    int is_server = 0;
     const int argc = (*env)->GetArrayLength(env, arguments);
     char *argv[argc+1]; // Needs to be offset by 1 for some reason, otherwise crash :/
     for (int i = 0; i < argc; i++) {
         jstring string = (jstring) (*env)->GetObjectArrayElement(env, arguments, i);
         const char *arg_str = (*env)->GetStringUTFChars(env, string, 0);
+
+        if (strcmp(arg_str, "-s") == 0) {
+            is_server = 1;
+        }
         argv[i+1] = strdup(arg_str);
         (*env)->ReleaseStringUTFChars(env, string, arg_str);
     }
@@ -85,8 +106,20 @@ Java_com_leekleak_iperfintegration_IPerf3Provider_runTestInternal(
     g_reporter_cb = test->reporter_callback;
     test->reporter_callback = custom_reporter_callback;
 
-    int result = iperf_run_client(test);
-    if (result < 0) {
+    g_test_thread = pthread_self();
+    g_was_cancelled = 0;
+    g_jmp_valid = 1;
+
+    int result;
+    if (setjmp(g_sigend_jmp)) {
+        iperf_got_sigend(test, SIGTERM);
+        g_was_cancelled = 1;
+        result = -1;
+    } else {
+        result = is_server ? iperf_run_server(test) : iperf_run_client(test);;
+    }
+
+    if (result < 0 && !g_was_cancelled) {
         jstring err = (*env)->NewStringUTF(env, iperf_strerror(i_errno));
         (*env)->CallVoidMethod(env, callback, method_error, err);
         (*env)->DeleteLocalRef(env, err);
@@ -108,5 +141,6 @@ JNIEXPORT void JNICALL
 Java_com_leekleak_iperfintegration_IPerf3Provider_stopTestInternal(JNIEnv *env, jclass clazz) {
     if (g_test) {
         g_test->done = 1;
+        pthread_kill(g_test_thread, SIGUSR1);
     }
 }

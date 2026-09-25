@@ -1,17 +1,22 @@
 package com.leekleak.iperfintegration
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 
 object IPerf3Provider {
     init {
         System.loadLibrary("iperf_integration")
     }
+
+    private val testDispatcher = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "iperf-test").apply { isDaemon = true }
+    }.asCoroutineDispatcher()
 
     val running: StateFlow<Boolean>
         field = MutableStateFlow(false)
@@ -44,18 +49,15 @@ object IPerf3Provider {
             }
 
             running.value = true
-            val job = CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(testDispatcher).launch {
                 runTestInternal(arguments, wrappedCallback)
             }
 
             cont.invokeOnCancellation {
                 stopTestInternal()
-                job.cancel()
                 running.value = false
                 stopping.value = false
             }
-
-            job.start()
         }
 
     fun stopTest() {
