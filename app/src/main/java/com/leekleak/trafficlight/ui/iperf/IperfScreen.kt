@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.iperfintegration.IPerf3Provider
+import com.leekleak.iperfintegration.IntervalResult
 import com.leekleak.iperfintegration.IperfCallback
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.IPerfEntry
@@ -205,11 +206,11 @@ private fun ClientScreen(
                     scope.launch {
                         if (selectedEntry == null) return@launch
                         IPerf3Provider.runTest(
-                            //arrayOf("-s"),
-                            arrayOf("-c", selectedEntry.ip, "-p", selectedEntry.port),
+                            arrayOf("-s"),
+                            //arrayOf("-c", selectedEntry.ip, "-p", selectedEntry.port),
                             object : IperfCallback {
-                                override fun onOutput(line: String) {
-                                    output += line
+                                override fun onOutput(results: List<IntervalResult>) {
+                                    output += results.joinToString { it.toString() }
                                 }
 
                                 override fun onError(error: String) {

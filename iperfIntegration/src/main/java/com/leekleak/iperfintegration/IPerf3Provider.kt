@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 
@@ -24,11 +26,16 @@ object IPerf3Provider {
     val stopping: StateFlow<Boolean>
         field = MutableStateFlow(false)
 
+    val json = Json { ignoreUnknownKeys = true }
+
     suspend fun runTest(arguments: Array<String>, callback: IperfCallback) =
         suspendCancellableCoroutine { cont ->
-            val wrappedCallback = object : IperfCallback {
-                override fun onOutput(line: String) {
-                    callback.onOutput(line)
+            val wrappedCallback = object : IperfCallbackInternal {
+                override fun onOutput(output: String) {
+                    val results: List<IntervalResult> = json.decodeFromString(
+                        ListSerializer(IntervalResultSerializer), output
+                    )
+                    callback.onOutput(results)
                 }
 
                 override fun onComplete() {
@@ -66,13 +73,19 @@ object IPerf3Provider {
     }
 
     @JvmStatic
-    private external fun runTestInternal(arguments: Array<String>, callback: IperfCallback)
+    private external fun runTestInternal(arguments: Array<String>, callback: IperfCallbackInternal)
     @JvmStatic
     private external fun stopTestInternal()
 }
 
+private interface IperfCallbackInternal {
+    fun onOutput(output: String)
+    fun onError(error: String)
+    fun onComplete()
+}
+
 interface IperfCallback {
-    fun onOutput(line: String)
+    fun onOutput(results: List<IntervalResult>)
     fun onError(error: String)
     fun onComplete()
 }

@@ -5,13 +5,12 @@
 #include <stdlib.h>
 #include "iperf.h"
 #include "iperf_api.h"
+#include "iperf_util.h"
 
 static JNIEnv *g_env;
 static jobject g_callback;
 static jmethodID g_method_output;
-static void (*g_reporter_cb)(struct iperf_test *);
-static char *g_buf;
-static size_t g_bufsize, g_last_pos;
+static void (*g_stats_cb)(struct iperf_test *);
 
 static struct iperf_test *g_test;
 static pthread_t g_test_thread;
@@ -25,17 +24,60 @@ static void sigend_handler(int sig) {
     }
 }
 
-static void custom_reporter_callback(struct iperf_test *test) {
-    if (g_reporter_cb) {
-        g_reporter_cb(test);
+static void custom_stats_callback(struct iperf_test *test) {
+    g_stats_cb(test);
+
+    struct iperf_stream *sp;
+
+    cJSON *json_interval = cJSON_CreateArray();
+    SLIST_FOREACH(sp, &test->streams, streams) {
+        struct iperf_stream_result *rp = sp->result;
+        struct iperf_interval_results *irp = TAILQ_LAST(&rp->interval_results, irlisthead);
+        if (irp == NULL) continue;
+
+        cJSON *entry;
+        if (g_test->protocol->id == Pudp) {
+            entry = iperf_json_printf(
+                    "protocol: %s  socket: %d  "
+                    "bytes_transferred: %d  interval_start_time: %d  interval_end_time: %d  "
+                    "interval_duration: %f  interval_packet_count: %d  interval_outoforder_packets: %d  "
+                    "interval_cnt_error: %d  packet_count: %d  jitter: %f  outoforder_packets: %d  "
+                    "cnt_error: %d  omitted: %b",
+                    "udp", (int64_t) sp->socket,
+                    (int64_t) irp->bytes_transferred,
+                    (int64_t) irp->interval_start_time.secs,
+                    (int64_t) irp->interval_end_time.secs,
+                    (double) irp->interval_duration,
+                    (int64_t) irp->interval_packet_count,
+                    (int64_t) irp->interval_outoforder_packets,
+                    (int64_t) irp->interval_cnt_error,
+                    (int64_t) irp->packet_count,
+                    (double) irp->jitter,
+                    (int64_t) irp->outoforder_packets,
+                    (int64_t) irp->cnt_error,
+                    (int) irp->omitted);
+        } else {
+            entry = iperf_json_printf(
+                    "protocol: %s  socket: %d  "
+                    "bytes_transferred: %d  interval_start_time: %d  interval_end_time: %d  "
+                    "interval_duration: %f  omitted: %b",
+                    "tcp", (int64_t) sp->socket,
+                    (int64_t) irp->bytes_transferred,
+                    (int64_t) irp->interval_start_time.secs,
+                    (int64_t) irp->interval_end_time.secs,
+                    (double) irp->interval_duration,
+                    (int) irp->omitted);
+        }
+        cJSON_AddItemToArray(json_interval, entry);
     }
-    fflush(test->outfile);
-    if (g_buf && g_bufsize > g_last_pos) {
-        jstring chunk = (*g_env)->NewStringUTF(g_env, g_buf + g_last_pos);
+    char *str = cJSON_Print(json_interval);
+    if (str != NULL) {
+        jstring chunk = (*g_env)->NewStringUTF(g_env, str);
         (*g_env)->CallVoidMethod(g_env, g_callback, g_method_output, chunk);
         (*g_env)->DeleteLocalRef(g_env, chunk);
-        g_last_pos = g_bufsize;
+        free(str);
     }
+    cJSON_Delete(json_interval);
 }
 
 
@@ -63,9 +105,6 @@ Java_com_leekleak_iperfintegration_IPerf3Provider_runTestInternal(
     g_env = env;
     g_callback = (*env)->NewGlobalRef(env, callback);
     g_method_output = method_output;
-    g_last_pos = 0;
-    g_bufsize = 0;
-    g_buf = NULL;
 
     int is_server = 0;
     const int argc = (*env)->GetArrayLength(env, arguments);
@@ -101,10 +140,8 @@ Java_com_leekleak_iperfintegration_IPerf3Provider_runTestInternal(
         goto cleanup;
     }
 
-    FILE *memf = open_memstream(&g_buf, &g_bufsize);
-    test->outfile = memf;
-    g_reporter_cb = test->reporter_callback;
-    test->reporter_callback = custom_reporter_callback;
+    g_stats_cb = test->stats_callback;
+    test->stats_callback = custom_stats_callback;
 
     g_test_thread = pthread_self();
     g_was_cancelled = 0;
@@ -116,7 +153,7 @@ Java_com_leekleak_iperfintegration_IPerf3Provider_runTestInternal(
         g_was_cancelled = 1;
         result = -1;
     } else {
-        result = is_server ? iperf_run_server(test) : iperf_run_client(test);;
+        result = is_server ? iperf_run_server(test) : iperf_run_client(test);
     }
 
     if (result < 0 && !g_was_cancelled) {
@@ -125,10 +162,7 @@ Java_com_leekleak_iperfintegration_IPerf3Provider_runTestInternal(
         (*env)->DeleteLocalRef(env, err);
     }
 
-    fflush(memf);
-    fclose(memf);
     iperf_free_test(test);
-    if (g_buf) free(g_buf);
 
 cleanup:
     (*env)->CallVoidMethod(env, callback, method_complete);
