@@ -13,7 +13,7 @@ val databaseModule = module {
     single<AppPreferenceRepo>()
     single<HistoryPreferenceRepo>()
 
-    single {
+    single<AppDatabase> {
         Room.databaseBuilder(
             androidContext(),
             AppDatabase::class.java,
@@ -22,10 +22,21 @@ val databaseModule = module {
             .addMigrations(
                 MIGRATION_1_2,
                 MIGRATION_2_3,
-                MIGRATION_3_4
+                MIGRATION_3_4,
             )
             .build()
     }
-    single { get<AppDatabase>().dataPlanDao() }
+    single<DataPlanDao> { get<AppDatabase>().dataPlanDao() }
     single<DataPlanRepository>()
+
+    single<IPerfEntryDatabase> {
+        Room.databaseBuilder(
+            androidContext(),
+            IPerfEntryDatabase::class.java,
+            "iperf_database"
+        )
+            .addMigrations()
+            .build()
+    }
+    single<IPerfEntryDao> { get<IPerfEntryDatabase>().iPerfEntryDao() }
 }

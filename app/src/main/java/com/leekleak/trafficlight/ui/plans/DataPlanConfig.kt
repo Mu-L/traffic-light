@@ -379,7 +379,8 @@ fun DataPlanConfig(
                             Box(modifier = Modifier.padding(horizontal = 8.dp)) {
                                 SearchField(
                                     textFieldState = textFieldState,
-                                    placeholder = stringResource(R.string.search)
+                                    placeholder = stringResource(R.string.search),
+                                    icon = painterResource(R.drawable.search)
                                 )
                             }
                         }

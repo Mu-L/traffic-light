@@ -254,32 +254,50 @@ fun SearchField(
     modifier: Modifier = Modifier,
     textFieldState: TextFieldState,
     placeholder: String,
-    icon: Painter = painterResource(R.drawable.search),
+    isError: String? = null,
+    icon: Painter? = null,
 ) {
-    TextField(
-        modifier = modifier.fillMaxWidth(),
-        state = textFieldState,
-        textStyle = MaterialTheme.typography.titleMedium.copy(color = colorScheme.onSurface),
-        placeholder = { Text(placeholder) },
-        leadingIcon = {
-            Icon(
-                modifier = Modifier.padding(start = 6.dp),
-                painter = icon,
-                contentDescription = null
+    Column {
+        TextField(
+            modifier = modifier.fillMaxWidth(),
+            state = textFieldState,
+            textStyle = MaterialTheme.typography.titleMedium.copy(color = colorScheme.onSurface),
+            placeholder = { Text(placeholder) },
+            leadingIcon =
+                icon?.let {
+                    {
+                        Icon(
+                            modifier = Modifier.padding(start = 6.dp),
+                            painter = it,
+                            contentDescription = null
+                        )
+                    }
+                },
+            isError = isError != null,
+            shape = shapes.extraLarge,
+            colors = TextFieldDefaults.colors().copy(
+                focusedContainerColor = colorScheme.surfaceContainerHigh,
+                errorContainerColor = colorScheme.surfaceContainerHigh,
+                unfocusedContainerColor = colorScheme.surfaceContainerHigh,
+                disabledContainerColor = colorScheme.surfaceContainerHigh,
+                unfocusedIndicatorColor = Color.Transparent,
+                errorIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent
             )
-        },
-        shape = shapes.extraLarge,
-        colors = TextFieldDefaults.colors().copy(
-            focusedContainerColor = colorScheme.surfaceContainerHigh,
-            errorContainerColor = colorScheme.surfaceContainerHigh,
-            unfocusedContainerColor = colorScheme.surfaceContainerHigh,
-            disabledContainerColor = colorScheme.surfaceContainerHigh,
-            unfocusedIndicatorColor = Color.Transparent,
-            errorIndicatorColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent
         )
-    )
+        SlideAnimatedVisibility(isError != null) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .fillMaxWidth()
+                    .card(colorScheme.errorContainer)
+                    .padding(8.dp)
+            ) {
+                Text(text = isError ?: "", color = colorScheme.error)
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

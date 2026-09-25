@@ -290,6 +290,7 @@ fun FancyDialog(
     modifier: Modifier = Modifier,
     title: String,
     icon: Painter,
+    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(16.dp),
     actionButton: @Composable (() -> Unit) = {},
     content: @Composable (ColumnScope.() -> Unit),
 ) {
@@ -300,7 +301,7 @@ fun FancyDialog(
                 .card(colorScheme.surfaceContainerLow)
                 .padding(16.dp)
                 .clearFocusOnTap(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = verticalArrangement
         ) {
             val font = remember { googleSans(weight = 600f) }
             Row(

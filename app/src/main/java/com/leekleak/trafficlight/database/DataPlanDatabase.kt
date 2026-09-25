@@ -65,12 +65,6 @@ interface DataPlanDao {
     suspend fun delete(hashedID: String)
 }
 
-@Database(entities = [DataPlan::class], version = 4, exportSchema = true)
-@ColumnTypeConverters(Converters::class)
-abstract class AppDatabase : RoomDatabase() {
-    abstract fun dataPlanDao(): DataPlanDao
-}
-
 class Converters {
     @ColumnTypeConverter
     fun fromDataSize(dataSize: DataSize): Long {
@@ -115,6 +109,12 @@ class Converters {
             listOf()
         }
     }
+}
+
+@Database(entities = [DataPlan::class], version = 4, exportSchema = true)
+@ColumnTypeConverters(Converters::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun dataPlanDao(): DataPlanDao
 }
 
 class DataPlanRepository(val dao: DataPlanDao) {
