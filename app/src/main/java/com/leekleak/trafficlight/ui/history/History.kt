@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -70,6 +71,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -585,6 +587,7 @@ private fun AppSearchDialog(
 ) {
     val sheetState = rememberBottomSheetState(SheetValue.Hidden)
     ModalBottomSheet (
+        modifier = Modifier.imePadding(),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
@@ -617,12 +620,19 @@ private fun AppSearchDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
+                .padding(bottom = 8.dp)
+            ,
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             AppSelector(searchResults, Modifier.fillMaxWidth()) { uid -> onSelect(uid) }
-            SearchField(textFieldState)
+            Box(Modifier.padding(horizontal = 8.dp)) {
+                SearchField(
+                    modifier = Modifier.focusRequester(focusRequester),
+                    textFieldState = textFieldState,
+                    placeholder = stringResource(R.string.search)
+                )
+            }
         }
     }
 }

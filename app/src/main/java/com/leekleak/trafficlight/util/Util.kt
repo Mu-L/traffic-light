@@ -3,6 +3,7 @@ package com.leekleak.trafficlight.util
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
 import android.text.format.DateFormat
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
@@ -37,7 +38,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -53,6 +53,8 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
@@ -63,7 +65,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -249,27 +250,36 @@ fun CategoryTitleSmallText(text: String) {
 }
 
 @Composable
-fun SearchField(textFieldState: TextFieldState) {
-    Row(
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth()
-            .background(colorScheme.surfaceContainerHigh, shapes.extraLarge)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.search),
-            contentDescription = null
+fun SearchField(
+    modifier: Modifier = Modifier,
+    textFieldState: TextFieldState,
+    placeholder: String,
+    icon: Painter = painterResource(R.drawable.search),
+) {
+    TextField(
+        modifier = modifier.fillMaxWidth(),
+        state = textFieldState,
+        textStyle = MaterialTheme.typography.titleMedium.copy(color = colorScheme.onSurface),
+        placeholder = { Text(placeholder) },
+        leadingIcon = {
+            Icon(
+                modifier = Modifier.padding(start = 6.dp),
+                painter = icon,
+                contentDescription = null
+            )
+        },
+        shape = shapes.extraLarge,
+        colors = TextFieldDefaults.colors().copy(
+            focusedContainerColor = colorScheme.surfaceContainerHigh,
+            errorContainerColor = colorScheme.surfaceContainerHigh,
+            unfocusedContainerColor = colorScheme.surfaceContainerHigh,
+            disabledContainerColor = colorScheme.surfaceContainerHigh,
+            unfocusedIndicatorColor = Color.Transparent,
+            errorIndicatorColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent
         )
-        BasicTextField(
-            modifier = Modifier.fillMaxWidth(),
-            state = textFieldState,
-            textStyle = MaterialTheme.typography.titleMedium.copy(color = colorScheme.onSurface),
-            cursorBrush = SolidColor(colorScheme.onSurface)
-        )
-    }
+    )
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -344,14 +354,14 @@ fun simIconRes(number: Int): Int {
     }
 }
 
-fun convertFontFamilyToTypeface(context: Context, fontFamily: FontFamily): android.graphics.Typeface {
+fun convertFontFamilyToTypeface(context: Context, fontFamily: FontFamily): Typeface {
     val resolver = createFontFamilyResolver(context)
 
     val result = resolver.resolve(
         fontFamily = fontFamily
     )
 
-    return result.value as android.graphics.Typeface
+    return result.value as Typeface
 }
 
 @Composable

@@ -376,7 +376,12 @@ fun DataPlanConfig(
                                     )
                                 }
                             }
-                            SearchField(textFieldState)
+                            Box(modifier = Modifier.padding(horizontal = 8.dp)) {
+                                SearchField(
+                                    textFieldState = textFieldState,
+                                    placeholder = stringResource(R.string.search)
+                                )
+                            }
                         }
                     }
 

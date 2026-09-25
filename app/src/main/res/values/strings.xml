@@ -163,6 +163,8 @@
     <string name="blur_effects">Blur effects</string>
     <string name="set_as_default">Set as default</string>
     <string name="speed_test">Speed Test</string>
+    <string name="search">Search</string>
+    <string name="server_ip_address">Server IP address</string>
     <plurals name="resets_in_days">
         <item quantity="one">Resets tomorrow</item>
         <item quantity="other">Resets in %d days</item>
