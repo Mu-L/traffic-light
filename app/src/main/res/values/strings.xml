@@ -180,6 +180,7 @@
     <string name="remove">Remove</string>
     <string name="client">Client</string>
     <string name="server">Server</string>
+    <string name="server_address">Server address</string>
     <plurals name="resets_in_days">
         <item quantity="one">Resets tomorrow</item>
         <item quantity="other">Resets in %d days</item>

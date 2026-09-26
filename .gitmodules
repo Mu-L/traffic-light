@@ -1,3 +1,0 @@
-[submodule "iperfIntegration/src/main/cpp/iperf"]
-	path = iperfIntegration/src/main/cpp/iperf
-	url = https://github.com/esnet/iperf

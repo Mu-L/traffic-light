@@ -92,6 +92,12 @@ android {
     lint {
         abortOnError = false
     }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 aboutLibraries {

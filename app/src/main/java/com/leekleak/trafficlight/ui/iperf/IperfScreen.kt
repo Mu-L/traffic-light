@@ -7,13 +7,28 @@ import android.os.Build
 import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,31 +43,46 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.iperfintegration.IPerf3Provider
 import com.leekleak.iperfintegration.IntervalResult
 import com.leekleak.iperfintegration.IperfCallback
 import com.leekleak.trafficlight.R
+import com.leekleak.trafficlight.charts.SpeedGraph
 import com.leekleak.trafficlight.database.IPerfEntry
 import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.components.HazeScaffold
 import com.leekleak.trafficlight.ui.navigation.NAVBAR_PADDING
 import com.leekleak.trafficlight.ui.settings.FancyDialog
 import com.leekleak.trafficlight.ui.theme.card
+import com.leekleak.trafficlight.ui.theme.googleSans
 import com.leekleak.trafficlight.util.CategoryTitleSmallText
+import com.leekleak.trafficlight.util.DataSize
 import com.leekleak.trafficlight.util.SearchField
+import com.leekleak.trafficlight.util.animateAlignmentAsState
+import com.leekleak.trafficlight.util.formattedParts
 import com.leekleak.trafficlight.util.iconToggleButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -63,9 +93,10 @@ fun IperfScreen(
     viewModel: IperfScreenVM
 ) {
     val myIp by viewModel.ipFlow.collectAsState(null)
+    val iPerf3Provider = viewModel.iPerf3Provider
 
     HazeScaffold(
-        title = stringResource(R.string.iperf3),
+        title = stringResource(R.string.iperf3) + " (Beta)",
         backAction = BackAction.None,
         scrollState = null,
         extraPadding = PaddingValues(bottom = NAVBAR_PADDING),
@@ -75,12 +106,17 @@ fun IperfScreen(
         val entries by viewModel.iperfEntries.collectAsStateWithLifecycle()
         val selectedEntry = entries.firstOrNull { it.selected }
 
+        val topPadding = contentPadding.calculateTopPadding()
+        val sidePadding = contentPadding.calculateLeftPadding(LayoutDirection.Ltr)
+        val bottomPadding = contentPadding.calculateBottomPadding()
         Column(
-            modifier = Modifier.padding(contentPadding),
+            modifier = Modifier.padding(top = topPadding, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ButtonGroup(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .padding(start = sidePadding, end = sidePadding)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(
                     4.dp,
                     Alignment.CenterHorizontally
@@ -114,10 +150,12 @@ fun IperfScreen(
                         selectEntry = viewModel::selectEntry,
                         deleteEntry = viewModel::deleteEntry,
                         myIp = myIp,
+                        iPerf3Provider = iPerf3Provider
                     )
                 } else {
                     ServerScreen(
                         myIp = myIp,
+                        iPerf3Provider = iPerf3Provider
                     )
                 }
             }
@@ -131,15 +169,12 @@ private fun ClientScreen(
     entries: List<IPerfEntry>,
     selectEntry: (IPerfEntry) -> Unit,
     deleteEntry: (IPerfEntry) -> Unit,
+    iPerf3Provider: IPerf3Provider,
     myIp: String?,
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
     var showEntrySelector by remember { mutableStateOf(false) }
     var showEntryCreator by remember { mutableStateOf(false) }
     var showEntryDeletion: IPerfEntry? by remember { mutableStateOf(null) }
-    var output by remember { mutableStateOf("") }
 
     if (showEntrySelector) {
         EntrySelectorComponent(
@@ -170,12 +205,13 @@ private fun ClientScreen(
         )
     }
 
-    Column(
+    Box(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Button(
+            modifier = Modifier
+                .padding(top = 4.dp)
+                .align(Alignment.TopCenter),
             shape = MaterialTheme.shapes.large,
             onClick = { showEntrySelector = true },
             contentPadding = PaddingValues(start = 16.dp, top = 4.dp, end = 8.dp, bottom = 4.dp)
@@ -188,7 +224,7 @@ private fun ClientScreen(
                     Text(text = stringResource(R.string.no_server_selected))
                 } else {
                     Column {
-                        Text(selectedEntry.name)
+                        Text(selectedEntry.name, fontWeight = FontWeight.Bold)
                         Text(selectedEntry.ip + ":" + selectedEntry.port)
                     }
                 }
@@ -196,68 +232,192 @@ private fun ClientScreen(
             }
         }
 
-        val iPerfRunning by IPerf3Provider.running.collectAsStateWithLifecycle()
-        val iPerfStopping by IPerf3Provider.stopping.collectAsStateWithLifecycle()
+        val data = remember { mutableStateListOf<Float>() }
+        val iPerfRunning by iPerf3Provider.running.collectAsStateWithLifecycle()
 
-        Button(
-            modifier = Modifier.size(128.dp),
-            onClick = {
-                if (!iPerfRunning) {
-                    scope.launch {
-                        if (selectedEntry == null) return@launch
-                        IPerf3Provider.runTest(
-                            arrayOf("-s"),
-                            //arrayOf("-c", selectedEntry.ip, "-p", selectedEntry.port),
-                            object : IperfCallback {
-                                override fun onOutput(results: List<IntervalResult>) {
-                                    output += results.joinToString { it.toString() }
-                                }
+        SpeedGraph(
+            modifier = Modifier
+                .fillMaxHeight(0.5f)
+                .align(Alignment.BottomCenter),
+            data = data,
+            running = iPerfRunning
+        )
 
-                                override fun onError(error: String) {
-                                    output += error
-                                }
+        val alignment by animateAlignmentAsState(if (iPerfRunning) Alignment.BottomCenter else Alignment.Center)
+        PlayButton(
+            modifier = Modifier
+                .align(alignment)
+                .padding(32.dp),
+            arguments = selectedEntry?.let { arrayOf("-c", it.ip, "-p", it.port, "-i", "0.5", "-p", "5201") },
+            addData = data::add,
+            iPerf3Provider = iPerf3Provider
+        )
 
-                                override fun onComplete() {
-                                    scope.launch {
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(context, "Done", Toast.LENGTH_SHORT)
-                                                .show()
-                                        }
+        AnimatedVisibility(
+            visible = iPerfRunning,
+            modifier = Modifier.align(Alignment.Center),
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            val currentItem = data.lastOrNull() ?: return@AnimatedVisibility
+            val text = DataSize(byteValue = currentItem.toLong()).formattedParts(extraPrecision = true, speed = true)
+
+            val interactionSource = remember { MutableInteractionSource() }
+            val pressed by interactionSource.collectIsPressedAsState()
+            val width by animateFloatAsState(
+                targetValue = if (pressed) 55f else 50f,
+                animationSpec = spring()
+            )
+            val weight by animateFloatAsState(if (pressed) 800f else 500f, spring())
+            val fontFamily1 = remember(weight, width) { googleSans(weight = weight, width = width, roundness = 60f) }
+
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 256.dp)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        onClick = {},
+                        indication = null
+                    ),
+                textAlign = TextAlign.Center,
+                text = buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontFamily = fontFamily1, fontSize = 88.sp)) {
+                        append("${text.first}${text.second}")
+                    }
+                    withStyle(style = SpanStyle(fontFamily = fontFamily1, fontSize = 42.sp)) {
+                        appendLine(text.third)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayButton(
+    modifier: Modifier,
+    arguments: Array<String>?,
+    addData: (Float) -> Unit, // bytes/sec
+    iPerf3Provider: IPerf3Provider,
+) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val iPerfRunning by iPerf3Provider.running.collectAsStateWithLifecycle()
+    val iPerfStopping by iPerf3Provider.stopping.collectAsStateWithLifecycle()
+
+    val rotation = remember { Animatable(0f) }
+    val size by animateDpAsState(if (!iPerfRunning) 128.dp else 96.dp)
+
+    LaunchedEffect(iPerfRunning) {
+        if (iPerfRunning) {
+            rotation.animateTo(
+                targetValue = rotation.value + 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(15000, easing = LinearEasing)
+                )
+            )
+        }
+    }
+
+    Button(
+        modifier = modifier
+            .graphicsLayer { rotationZ = rotation.value }
+            .size(size),
+        onClick = {
+            if (!iPerfRunning) {
+                scope.launch { // Intentionally scope to ui instance so the test gets canceled automatically and doesn't leak
+                    if (arguments == null) return@launch
+                    iPerf3Provider.runTest(
+                        arguments,
+                        object : IperfCallback {
+                            override fun onOutput(results: List<IntervalResult>) {
+                                val result = results.last()
+                                addData((result.bytesTransferred.toDouble() / result.intervalDuration).toFloat())
+                            }
+
+                            override fun onError(error: String) {
+                                scope.launch {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             }
-                        )
-                    }
-                } else {
-                    IPerf3Provider.stopTest()
+
+                            override fun onComplete() {
+                                scope.launch {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, "Done", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
+                    )
                 }
-            },
-            enabled = !iPerfStopping,
-            shape = Cookie12Sided.toShape()
-        ) {
-            val modifier = Modifier.size(56.dp)
-            AnimatedContent(iPerfRunning) {
-                if (it) {
-                    Icon(painterResource(R.drawable.stop), null, modifier)
-                } else {
-                    Icon(painterResource(R.drawable.play_arrow), null, modifier)
-                }
+            } else {
+                iPerf3Provider.stopTest()
+            }
+        },
+        enabled = !iPerfStopping,
+        shape = Cookie12Sided.toShape(),
+    ) {
+        val modifier = Modifier.size(56.dp)
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer { rotationZ = -rotation.value }) {
+            AnimatedContent(
+                targetState = iPerfRunning,
+                modifier = Modifier.align(Alignment.Center),
+                transitionSpec =  { fadeIn().togetherWith(fadeOut()) }
+            ) {
+                Icon(
+                    painter = painterResource(if (it) R.drawable.stop else R.drawable.play_arrow),
+                    contentDescription = null,
+                    modifier = modifier
+                )
             }
         }
-
-        Text(text = output)
     }
 }
 
 @Composable
 private fun ServerScreen(
     myIp: String?,
+    iPerf3Provider: IPerf3Provider
 ) {
-    Column(
+    Box(
         modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        myIp?.let { Text(text = it) }
+        Column(
+            modifier = Modifier
+                .card(MaterialTheme.colorScheme.primary)
+                .padding(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 4.dp)
+                .align(Alignment.TopCenter)
+        ) {
+            Text(
+                text = stringResource(R.string.server_address),
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                lineHeight = 18.sp,
+            )
+            myIp?.let {
+                Text(
+                    text = "$it:5201",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    lineHeight = 18.sp,
+                )
+            }
+        }
+
+        PlayButton(
+            modifier = Modifier.padding(32.dp).align(Alignment.Center),
+            arguments = arrayOf("-s", "-p", "5201"),
+            addData = {},
+            iPerf3Provider = iPerf3Provider
+        )
     }
 }
 

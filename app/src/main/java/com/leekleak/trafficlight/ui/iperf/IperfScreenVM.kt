@@ -10,6 +10,7 @@ import android.os.Build
 import android.text.format.Formatter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.leekleak.iperfintegration.IPerf3Provider
 import com.leekleak.trafficlight.database.IPerfEntry
 import com.leekleak.trafficlight.database.IPerfEntryDao
 import kotlinx.coroutines.channels.awaitClose
@@ -22,7 +23,8 @@ import kotlinx.coroutines.launch
 class IperfScreenVM(
     private val connectivityManager: ConnectivityManager,
     private val wifiManager: WifiManager,
-    private val iPerfEntryDao: IPerfEntryDao
+    private val iPerfEntryDao: IPerfEntryDao,
+    val iPerf3Provider: IPerf3Provider,
 ): ViewModel() {
     val ipFlow: Flow<String?> = callbackFlow {
         var networkCallback: ConnectivityManager.NetworkCallback? = null

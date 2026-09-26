@@ -12,6 +12,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -61,9 +62,12 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -569,4 +573,14 @@ fun Modifier.clearFocusOnTap(): Modifier {
             focusManager.clearFocus()
         }
     }
+}
+
+@Composable
+fun animateAlignmentAsState(
+    targetAlignment: Alignment,
+): State<Alignment> {
+    val biased = targetAlignment as BiasAlignment
+    val horizontal by animateFloatAsState(biased.horizontalBias)
+    val vertical by animateFloatAsState(biased.verticalBias)
+    return derivedStateOf { BiasAlignment(horizontal, vertical) }
 }
