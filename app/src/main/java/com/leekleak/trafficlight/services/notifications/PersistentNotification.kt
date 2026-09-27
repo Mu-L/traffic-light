@@ -61,4 +61,8 @@ abstract class PersistentNotification(
         }
     }
     abstract fun screenStateChange(on: Boolean)
+
+    companion object {
+        const val DECADE = 1000 * 60 * 60 * 24 * 365 * 10
+    }
 }

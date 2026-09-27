@@ -36,6 +36,7 @@ class PlanNotification(
         updateBaseNotification()
     }
 
+
     override fun start() {
         if (job?.isActive == true) return
         job = scope.launch {
@@ -74,6 +75,7 @@ class PlanNotification(
                 if (!dataPlan.liveNotification) {
                     setSmallIcon(notificationIconHelper.createIcon(speed, unit))
                     setShowWhen(false)
+                    setWhen(System.currentTimeMillis() + DECADE)
                 }
                 else  {
                     setSmallIcon(simIconRes(dataPlan.simIndex))

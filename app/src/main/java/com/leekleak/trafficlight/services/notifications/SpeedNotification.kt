@@ -193,7 +193,8 @@ class SpeedNotification(
                             )
                         }
                     )
-                    .setShowWhen(false)
+                    setShowWhen(false)
+                    setWhen(System.currentTimeMillis() + DECADE) // Used Long.MAX_VALUE before, but that caused overflows on honor android skins for reasons unknown
                 }
                 else  {
                     setSmallIcon(R.drawable.mobiledata_arrows)
