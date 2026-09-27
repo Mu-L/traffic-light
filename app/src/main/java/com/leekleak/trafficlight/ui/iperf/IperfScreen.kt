@@ -2,9 +2,6 @@
 
 package com.leekleak.trafficlight.ui.iperf
 
-import android.net.InetAddresses
-import android.os.Build
-import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -250,6 +247,7 @@ private fun ClientScreen(
                 .padding(32.dp),
             arguments = selectedEntry?.let { arrayOf("-c", it.ip, "-p", it.port, "-i", "0.5", "-p", "5201") },
             addData = data::add,
+            clearData = data::clear,
             iPerf3Provider = iPerf3Provider
         )
 
@@ -299,6 +297,7 @@ private fun PlayButton(
     modifier: Modifier,
     arguments: Array<String>?,
     addData: (Float) -> Unit, // bytes/sec
+    clearData: () -> Unit,
     iPerf3Provider: IPerf3Provider,
 ) {
     val scope = rememberCoroutineScope()
@@ -326,6 +325,7 @@ private fun PlayButton(
             .size(size),
         onClick = {
             if (!iPerfRunning) {
+                clearData()
                 scope.launch { // Intentionally scope to ui instance so the test gets canceled automatically and doesn't leak
                     if (arguments == null) return@launch
                     iPerf3Provider.runTest(
@@ -333,7 +333,7 @@ private fun PlayButton(
                         object : IperfCallback {
                             override fun onOutput(results: List<IntervalResult>) {
                                 val result = results.last()
-                                addData((result.bytesTransferred.toDouble() / result.intervalDuration).toFloat())
+                                addData(result.bitsPerSecond.toFloat()/8f)
                             }
 
                             override fun onError(error: String) {
@@ -344,13 +344,7 @@ private fun PlayButton(
                                 }
                             }
 
-                            override fun onComplete() {
-                                scope.launch {
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Done", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
+                            override fun onComplete() {}
                         }
                     )
                 }
@@ -416,6 +410,7 @@ private fun ServerScreen(
             modifier = Modifier.padding(32.dp).align(Alignment.Center),
             arguments = arrayOf("-s", "-p", "5201"),
             addData = {},
+            clearData = {},
             iPerf3Provider = iPerf3Provider
         )
     }
@@ -510,7 +505,7 @@ private fun EntryCreatorComponent(
 
     val emptyNameError = stringResource(R.string.name_cannot_be_empty)
     val usedNameError = stringResource(R.string.name_already_used)
-    val invalidIpError = stringResource(R.string.invalid_ip_address)
+    //val invalidIpError = stringResource(R.string.invalid_ip_address) Not worth checking as ip address could also be a domain name
     val invalidPortError = stringResource(R.string.invalid_port)
     FancyDialog(
         onDismissRequest = onDismissRequest,
@@ -519,15 +514,10 @@ private fun EntryCreatorComponent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         actionButton = {
             Button(onClick = {
-                val name = nameFieldState.text.toString()
+                val name = nameFieldState.text.toString().trim()
                 val validName = name.isNotBlank() && entries.find { it.name == name } == null
 
-                val ip = ipFieldState.text.toString()
-                val validIp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    InetAddresses.isNumericAddress(ip)
-                } else {
-                    Patterns.IP_ADDRESS.matcher(ip).matches()
-                }
+                val ip = ipFieldState.text.toString().trim()
 
                 val port = portFieldState.text.toString().toIntOrNull()
                 val validPort = port != null && port in 0..65535
@@ -539,9 +529,8 @@ private fun EntryCreatorComponent(
                         usedNameError
                     }
                 } else null
-                ipFieldError = if (!validIp) { invalidIpError } else null
                 portFieldError = if (!validPort) { invalidPortError } else null
-                if (validName && validIp && validPort) {
+                if (validName && validPort) {
                     selectEntry(
                         IPerfEntry(
                             name = name,

@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
@@ -37,6 +36,10 @@ class IPerf3Provider(context: Context) {
         } catch (_: Exception) {}
     }
 
+    private val ignoredErrors = listOf(
+        "read interrupted by close() on another thread" // Thrown whenever the process is canceled by user
+    )
+
     suspend fun runTest(arguments: Array<String>, callback: IperfCallback) =
         suspendCancellableCoroutine { cont ->
             running.value = true
@@ -58,7 +61,7 @@ class IPerf3Provider(context: Context) {
                         try {
                             BufferedReader(InputStreamReader(process.errorStream)).useLines { lines ->
                                 lines.forEach { line ->
-                                    if (line.isNotBlank()) {
+                                    if (line.isNotBlank() && !ignoredErrors.contains(line)) {
                                         callback.onError(line)
                                     }
                                 }
@@ -82,10 +85,10 @@ class IPerf3Provider(context: Context) {
                     }
                     callback.onComplete()
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
+                    if (!ignoredErrors.contains(e.message)) {
                         callback.onError(e.message ?: "Unknown error launching iperf3")
-                        callback.onComplete()
                     }
+                    callback.onComplete()
                 } finally {
                     currentProcess = null
                     running.value = false
