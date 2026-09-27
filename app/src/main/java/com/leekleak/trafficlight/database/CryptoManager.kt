@@ -21,9 +21,9 @@ object CryptoManager {
     private val keyCache = ConcurrentHashMap<String, SecretKey>()
 
     private fun getSecretKey(alias: String): SecretKey {
-        return keyCache[alias] ?: (keyStore.getEntry(alias, null) as? KeyStore.SecretKeyEntry)?.secretKey?.also {
-            keyCache[alias] = it
-        } ?: createKey(alias)
+        return keyCache.computeIfAbsent(alias) { key ->
+            (keyStore.getEntry(key, null) as? KeyStore.SecretKeyEntry)?.secretKey ?: createKey(key)
+        }
     }
 
     private fun createKey(alias: String): SecretKey {
@@ -40,9 +40,7 @@ object CryptoManager {
         }
 
         keyGenerator.init( builder.build() )
-        val key = keyGenerator.generateKey()
-        keyCache[alias] = key
-        return key
+        return keyGenerator.generateKey()
     }
 
     fun encrypt(data: String): String {

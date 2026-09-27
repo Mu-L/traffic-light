@@ -60,6 +60,9 @@ data class DataPlan(
     @ColumnInfo val lastSafetyState: Int = -1,
     @ColumnInfo val budgetOvershotNotified: Boolean = false,
 
+    /**
+     * TODO: All of these should be made immutable in the future
+     */
     @ColumnInfo var mainDataSize: DataSize = DataSize(0),
     @ColumnInfo var mainDataSizeUnit: DataSizeUnit = DataSizeUnit.GB,
     @ColumnInfo var mainDataUsed: Long = 0,
