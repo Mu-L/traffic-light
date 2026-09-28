@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.os.Build
 import android.os.DeadSystemException
 import androidx.core.app.NotificationCompat
 import com.leekleak.trafficlight.MainActivity
@@ -263,23 +262,11 @@ class SpeedNotification(
     private fun shouldGoSilent(): Boolean = (silentChannelTicks >= SILENT_CHANNEL_TICK_TARGET) && speedThreshold
 
     private fun isNetworkAvailable(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)?.run {
-                hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
-                hasTransport(NetworkCapabilities.TRANSPORT_VPN)
-            } ?: false
-        } else {
-            connectivityManager.activeNetworkInfo?.run {
-                when (type) {
-                    ConnectivityManager.TYPE_WIFI -> true
-                    ConnectivityManager.TYPE_MOBILE -> true
-                    ConnectivityManager.TYPE_ETHERNET -> true
-                    else -> false
-                }
-            } ?: false
-        }
+        return connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)?.run {
+            hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+            hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+            hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+        } ?: false
     }
 
     companion object {
