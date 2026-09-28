@@ -101,6 +101,20 @@ class TrafficLightApplication : Application() {
         }
 
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+
+        val currentChannels = listOf(
+            SpeedNotification.NOTIFICATION_CHANNEL_ID,
+            SpeedNotification.NOTIFICATION_CHANNEL_ID_SILENT,
+            PlanNotification.NOTIFICATION_CHANNEL_ID,
+            WarningNotificationHelper.NOTIFICATION_CHANNEL_ID
+        )
+        
+        notificationManager.notificationChannels.forEach {
+            if (!currentChannels.contains(it.id)) {
+                notificationManager.deleteNotificationChannel(it.id)
+            }
+        }
+
         notificationManager.createNotificationChannels(
             listOf(
                 speedChannel,
