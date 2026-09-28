@@ -1,0 +1,11 @@
+iPerf3 (Beta):
+- Introducing a brand new iPerf3 client and server
+- Please share what configuration options may be useful for you while the feature is still in development
+
+Enhancements:
+- Many UI enhancements
+- Under the hood polish
+
+Bugfixes:
+- Fix a couple crashes and ANRs
+- Fix widgets not updating after restart
