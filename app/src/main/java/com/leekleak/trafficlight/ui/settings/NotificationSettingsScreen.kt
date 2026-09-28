@@ -1,6 +1,8 @@
 package com.leekleak.trafficlight.ui.settings
 
+import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -30,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.database.AppPreferenceRepo
 import com.leekleak.trafficlight.database.TrafficSnapshotManager
+import com.leekleak.trafficlight.services.notifications.SpeedNotification
 import com.leekleak.trafficlight.ui.components.BackAction
 import com.leekleak.trafficlight.ui.components.HazeScaffold
 import com.leekleak.trafficlight.ui.navigation.Navigator
@@ -98,16 +101,31 @@ private fun NotificationChannelSettings(appPreferenceRepo: AppPreferenceRepo) {
                     scope.launch { appPreferenceRepo.setSpeedThresholdKb(it) }
                 }
             )
-            NavigatePreference(
-                title = stringResource(R.string.doesn_t_work),
-                icon = painterResource(R.drawable.help),
-                onClick = {
-                    openLink(
-                        activity,
-                        "https://github.com/leekleak/traffic-light/wiki/Troubleshooting#notification-doesnt-get-silenced"
-                    )
-                },
-            )
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                IconPreference(
+                    title = stringResource(R.string.notification_channels),
+                    painter = painterResource(R.drawable.notification_settings),
+                    onClick = {
+                        val intent: Intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                            .putExtra(Settings.EXTRA_APP_PACKAGE, activity?.packageName)
+                            .putExtra(Settings.EXTRA_CHANNEL_ID, SpeedNotification.NOTIFICATION_CHANNEL_ID_SILENT)
+                        activity?.startActivity(intent)
+                    },
+                )
+                NavigatePreference(
+                    title = stringResource(R.string.doesn_t_work),
+                    icon = painterResource(R.drawable.help),
+                    onClick = {
+                        openLink(
+                            activity,
+                            "https://github.com/leekleak/traffic-light/wiki/Troubleshooting#notification-doesnt-get-silenced"
+                        )
+                    },
+                )
+            }
         }
     }
 }
