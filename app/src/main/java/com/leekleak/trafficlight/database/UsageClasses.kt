@@ -1,6 +1,5 @@
 package com.leekleak.trafficlight.database
 
-import android.content.Context
 import com.leekleak.trafficlight.model.DataUID
 import com.leekleak.trafficlight.util.toLocaleHourString
 import java.time.LocalDate
@@ -25,7 +24,7 @@ data class HourUsage(
     val end: LocalDateTime,
     val usage: DayUsage,
 ) {
-    fun toString(context: Context): String {
-        return "${start.toLocalTime().toLocaleHourString(context)} - ${end.toLocalTime().toLocaleHourString(context)}"
+    fun toString(is24HourFormat: Boolean): String {
+        return "${start.toLocalTime().toLocaleHourString(is24HourFormat)} - ${end.toLocalTime().toLocaleHourString(is24HourFormat)}"
     }
 }

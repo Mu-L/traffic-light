@@ -3,7 +3,11 @@ package com.leekleak.trafficlight.util
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.database.ContentObserver
 import android.graphics.Typeface
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.text.format.DateFormat
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
@@ -65,6 +69,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
@@ -75,6 +80,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -103,6 +109,9 @@ import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.blur.materials.HazeMaterials
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -114,6 +123,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.enums.enumEntries
+import androidx.compose.ui.platform.LocalLocale
 
 enum class NetworkType {
     Cellular,
@@ -146,9 +156,13 @@ fun fromTimestamp(stamp: Long): LocalDateTime {
     )
 }
 
-fun LocalTime.toLocaleHourString(context: Context, short: Boolean = false): String {
-    val pattern = if (DateFormat.is24HourFormat(context)) "HH:mm"
-        else (if (short) "hh a" else "hh:mm a")
+fun LocalTime.toLocaleHourString(is24HourFormat: Boolean, short: Boolean = false): String {
+    val pattern = if (is24HourFormat){
+        "HH:mm"
+    } else {
+        if (short) "hh a"
+        else "hh:mm a"
+    }
     val formatter = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
     return format(formatter)
 }
@@ -582,5 +596,26 @@ fun animateAlignmentAsState(
     val biased = targetAlignment as BiasAlignment
     val horizontal by animateFloatAsState(biased.horizontalBias)
     val vertical by animateFloatAsState(biased.verticalBias)
-    return derivedStateOf { BiasAlignment(horizontal, vertical) }
+    return remember { derivedStateOf { BiasAlignment(horizontal, vertical) } }
+}
+
+@Composable
+fun rememberIs24HourFormat(): State<Boolean> {
+    val context = LocalContext.current.applicationContext
+    val locale = LocalLocale.current.platformLocale
+    return produceState(
+        initialValue = DateFormat.getBestDateTimePattern(locale, "j").contains('H')
+    ) {
+        value = withContext(Dispatchers.IO) { DateFormat.is24HourFormat(context) }
+
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                launch { value = withContext(Dispatchers.IO) { DateFormat.is24HourFormat(context) } }
+            }
+        }
+        context.contentResolver.registerContentObserver(
+            Settings.System.getUriFor(Settings.System.TIME_12_24), false, observer
+        )
+        awaitDispose { context.contentResolver.unregisterContentObserver(observer) }
+    }
 }

@@ -113,6 +113,7 @@ import com.leekleak.trafficlight.util.SearchField
 import com.leekleak.trafficlight.util.getName
 import com.leekleak.trafficlight.util.iconToggleButton
 import com.leekleak.trafficlight.util.openLink
+import com.leekleak.trafficlight.util.rememberIs24HourFormat
 import com.leekleak.trafficlight.util.shelfShape
 import com.leekleak.trafficlight.util.toDp
 import com.leekleak.trafficlight.util.toLocaleHourString
@@ -262,15 +263,14 @@ private fun AppList(viewModel: HistoryVM, paddingValues: PaddingValues) {
 
 @Composable
 private fun HourList(viewModel: HistoryVM, paddingValues: PaddingValues) {
-    val context = LocalContext.current
-
     val hourList by remember { viewModel.hourList }.collectAsStateWithLifecycle()
     var hourSelected by remember { mutableIntStateOf(-1) }
     val maximum by remember { derivedStateOf { hourList.sumOf { it.usage.totalUsage } } }
     val textMeasurer = rememberTextMeasurer()
     val font = remember { historyItemFont() }
+    val is24HourFormat by rememberIs24HourFormat()
     val measurement = textMeasurer.measure(
-        text = LocalTime.MIDNIGHT.toLocaleHourString(context, true),
+        text = LocalTime.MIDNIGHT.toLocaleHourString(is24HourFormat, true),
         style = TextStyle(
             fontFamily = font,
             fontSize = MaterialTheme.typography.titleMedium.fontSize,
@@ -317,7 +317,7 @@ private fun HourList(viewModel: HistoryVM, paddingValues: PaddingValues) {
                     viewModel = viewModel,
                     usage1 = item.usage.usage1,
                     usage2 = item.usage.usage2,
-                    name = item.toString(context),
+                    name = item.toString(is24HourFormat),
                     selected = item.start.hour == hourSelected,
                     maximum = maximum,
                     onClick = {hourSelected = if (item.start.hour != hourSelected) item.start.hour else -1}
@@ -327,7 +327,7 @@ private fun HourList(viewModel: HistoryVM, paddingValues: PaddingValues) {
                         .height(32.dp)) {
                         Text(
                             modifier = Modifier.align(Alignment.Center),
-                            text = item.start.toLocalTime().toLocaleHourString(context, true),
+                            text = item.start.toLocalTime().toLocaleHourString(is24HourFormat, true),
                             fontFamily = font,
                             fontSize = MaterialTheme.typography.titleMedium.fontSize,
                             textAlign = TextAlign.Center,
