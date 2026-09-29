@@ -64,8 +64,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.leekleak.iperfintegration.IPerf3Provider
-import com.leekleak.iperfintegration.IntervalResult
+import com.leekleak.iperfintegration.IntervalEvent
 import com.leekleak.iperfintegration.IperfCallback
+import com.leekleak.iperfintegration.IperfEvent
 import com.leekleak.trafficlight.R
 import com.leekleak.trafficlight.charts.SpeedGraph
 import com.leekleak.trafficlight.database.IPerfEntry
@@ -331,9 +332,12 @@ private fun PlayButton(
                     iPerf3Provider.runTest(
                         arguments,
                         object : IperfCallback {
-                            override fun onOutput(results: List<IntervalResult>) {
-                                val result = results.last()
-                                addData(result.bitsPerSecond.toFloat()/8f)
+                            override fun onOutput(event: IperfEvent) {
+                                if (event is IntervalEvent) {
+                                    event.results.forEach { result ->
+                                        addData(result.bitsPerSecond.toFloat()/8f)
+                                    }
+                                }
                             }
 
                             override fun onError(error: String) {

@@ -29,10 +29,8 @@ class IPerf3Provider(context: Context) {
 
     private fun parseAndDeliver(line: String, callback: IperfCallback) {
         try {
-            val results = parser.parseLine(line)
-            if (results.isNotEmpty()) {
-                callback.onOutput(results)
-            }
+            val results = parser.parseEvent(line)
+            callback.onOutput(results)
         } catch (_: Exception) {}
     }
 
@@ -115,7 +113,7 @@ class IPerf3Provider(context: Context) {
 }
 
 interface IperfCallback {
-    fun onOutput(results: List<IntervalResult>)
+    fun onOutput(event: IperfEvent)
     fun onError(error: String)
     fun onComplete()
 }
